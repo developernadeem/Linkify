@@ -8,6 +8,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -19,20 +20,22 @@ import pk.edu.uaf.linkify.MainActivity;
 
 import static pk.edu.uaf.linkify.BroadCastReceivers.App.CHANNEL_ID;
 
-class ClientWorker implements Runnable {
+public class ClientWorker implements Runnable {
     private Socket client;
     private Context context;
+    private static final String TAG = "ClientWorker";
 
     @Override
     protected void finalize() throws Throwable {
         context = null;
+        client.close();
         super.finalize();
     }
 
     //Constructor
-    ClientWorker(Socket client, Context textArea) {
+    ClientWorker(Socket client, Context context) {
         this.client = client;
-        this.context = textArea;
+        this.context = context;
     }
 
     public void run(){
@@ -48,21 +51,29 @@ class ClientWorker implements Runnable {
             System.out.println("in or out failed");
             System.exit(-1);
         }
-
+        StringBuilder builder = new StringBuilder();
         while(true){
             try{
                 line = in.readLine();
+                if (line ==null)break;
                 //Send data back to client
                 //out.println(line);
                 //Append data to text area
                 showNotification(line);
             }catch (IOException e) {
-                System.out.println("Read failed");
-                System.exit(-1);
+                e.printStackTrace();
+                Log.d(TAG, "run: ");
+                break;
             }
         }
+        try {
+            in.close();
+            out.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-    private synchronized void showNotification(String line){
+    private  void showNotification(String line){
         NotificationManager notificationManager =
                 (NotificationManager) context.getSystemService(Service.NOTIFICATION_SERVICE);
         Intent intent = new Intent(context, MainActivity.class);

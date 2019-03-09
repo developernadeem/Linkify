@@ -12,6 +12,7 @@ import android.os.PowerManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -24,7 +25,6 @@ public class LinkifyIntententService extends IntentService {
     public static final int ID = 11;
     private ServerSocket mServerSocket;
     private NsdManager mNsdManager;
-    private volatile boolean  isActive = false;
     private NsdManager.RegistrationListener mRegistrationListener;
 
     private PowerManager.WakeLock wakeLock;
@@ -38,7 +38,7 @@ public class LinkifyIntententService extends IntentService {
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "onCreate");
-
+        initializeRegistrationListener();
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
                 "ExampleApp:Wakelock");
@@ -54,15 +54,15 @@ public class LinkifyIntententService extends IntentService {
 
             startForeground(ID, notification);
         }
-        initializeRegistrationListener();
+
 
     }
 
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
         Log.d(TAG, "onHandleIntent");
-        isActive = true;
         registerService(initializeServerSocket());
+
         while(true){
             ClientWorker w;
             try{
@@ -82,10 +82,14 @@ public class LinkifyIntententService extends IntentService {
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestroy");
-        isActive = false;
         wakeLock.release();
         Log.d(TAG, "Wakelock released");
-        //Toast.makeText(this,"Service destroyed", Toast.LENGTH_SHORT).show();
+        mNsdManager.unregisterService(mRegistrationListener);
+        try {
+            mServerSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
     public int initializeServerSocket() {
         // Initialize a server socket on the next available port.
@@ -110,6 +114,7 @@ public class LinkifyIntententService extends IntentService {
 
         mNsdManager.registerService(
                 serviceInfo, NsdManager.PROTOCOL_DNS_SD, mRegistrationListener);
+        Log.d(TAG, "registerService: Should be registered");
     }
     public void initializeRegistrationListener() {
         mRegistrationListener = new NsdManager.RegistrationListener() {
@@ -121,11 +126,12 @@ public class LinkifyIntententService extends IntentService {
                 // with the name Android actually used.
                 //mServiceName = NsdServiceInfo.getServiceName();
                 Log.d(TAG, "onServiceRegistered: Service Registered Successfully");
-                //Toast.makeText(LinkifyIntententService.this, "Service Registered Successfully", Toast.LENGTH_LONG).show();
+                Toast.makeText(LinkifyIntententService.this, "Service Registered Successfully", Toast.LENGTH_LONG).show();
             }
 
             @Override
             public void onRegistrationFailed(NsdServiceInfo serviceInfo, int errorCode) {
+                Log.d(TAG, "onRegistrationFailed: "+errorCode);
                 // Registration failed! Put debugging code here to determine why.
             }
 

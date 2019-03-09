@@ -20,6 +20,16 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Button createService = findViewById(R.id.button);
+        Button stopService = findViewById(R.id.stopService);
+        stopService.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent serviceIntent = new Intent(MainActivity.this, LinkifyIntententService.class);
+
+                stopService(serviceIntent);
+
+            }
+        });
         Button discoverService = findViewById(R.id.button2);
         createService.setOnClickListener(new View.OnClickListener() {
             @Override
