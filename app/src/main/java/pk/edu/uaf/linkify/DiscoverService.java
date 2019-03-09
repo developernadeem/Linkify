@@ -9,18 +9,17 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-import pk.edu.uaf.linkify.Adapters.MyServicesRecyclerViews;
+import pk.edu.uaf.linkify.Adapters.MyServicesRecyclerAdapter;
 
 public class DiscoverService extends AppCompatActivity {
     private static final String TAG = "DiscoverService";
     NsdManager.DiscoveryListener mDiscoveryListener;
     List<NsdServiceInfo> serviceInfos = new ArrayList<>();
     private NsdManager mNsdManager;
-    private MyServicesRecyclerViews adapter;
+    private MyServicesRecyclerAdapter adapter;
     private NsdManager.ResolveListener mResolveListener;
 
     @Override
@@ -28,7 +27,7 @@ public class DiscoverService extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_discover_service);
         mNsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
-        adapter = new MyServicesRecyclerViews(serviceInfos);
+        adapter = new MyServicesRecyclerAdapter(serviceInfos);
         RecyclerView recyclerView = findViewById(R.id.recyclerview);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
