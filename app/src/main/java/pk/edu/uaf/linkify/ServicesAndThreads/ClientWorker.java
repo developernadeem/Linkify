@@ -53,7 +53,7 @@ class ClientWorker implements Runnable {
             try{
                 line = in.readLine();
                 //Send data back to client
-                out.println(line);
+                //out.println(line);
                 //Append data to text area
                 showNotification(line);
             }catch (IOException e) {

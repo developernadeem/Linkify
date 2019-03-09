@@ -16,7 +16,6 @@ import android.util.Log;
 import java.io.IOException;
 import java.net.ServerSocket;
 
-import pk.edu.uaf.linkify.ClientWorker;
 
 import static pk.edu.uaf.linkify.BroadCastReceivers.App.CHANNEL_ID;
 
