@@ -49,6 +49,8 @@ public class MyServicesRecyclerAdapter extends RecyclerView.Adapter<MyServicesRe
                                     new OutputStreamWriter(mSocket.getOutputStream())),
                                     true);
                             out.println("You Got A message from Nadeem. Happy Coding!");
+                            out.close();
+                            mSocket.close();
                         }catch (IOException e){
                             e.printStackTrace();
                         }
