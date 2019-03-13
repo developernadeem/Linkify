@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Linkify</string>
+    <string name="appbar_scrolling">android.support.design.widget.AppBarLayout$ScrollingViewBehavior</string>
 </resources>
