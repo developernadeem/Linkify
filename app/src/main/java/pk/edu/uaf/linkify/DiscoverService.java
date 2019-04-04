@@ -1,6 +1,7 @@
 package pk.edu.uaf.linkify;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import android.support.v7.app.AppCompatActivity;
@@ -14,7 +15,7 @@ import java.util.List;
 
 import pk.edu.uaf.linkify.Adapters.MyServicesRecyclerAdapter;
 
-public class DiscoverService extends AppCompatActivity {
+public class DiscoverService extends AppCompatActivity implements MyServicesRecyclerAdapter.ClickListener {
     private static final String TAG = "DiscoverService";
     NsdManager.DiscoveryListener mDiscoveryListener;
     List<NsdServiceInfo> serviceInfos = new ArrayList<>();
@@ -27,7 +28,7 @@ public class DiscoverService extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_discover_service);
         mNsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
-        adapter = new MyServicesRecyclerAdapter(serviceInfos);
+        adapter = new MyServicesRecyclerAdapter(serviceInfos,this);
         RecyclerView recyclerView = findViewById(R.id.recyclerview);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
@@ -115,5 +116,12 @@ public class DiscoverService extends AppCompatActivity {
                 mNsdManager.stopServiceDiscovery(this);
             }
         };
+    }
+
+    @Override
+    public void ItemClickListener(NsdServiceInfo info) {
+        Intent call = new Intent(this,CallActivity.class);
+        call.putExtra("info", info);
+        startActivity(call);
     }
 }

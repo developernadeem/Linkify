@@ -7,7 +7,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
-import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyIntententService;
+import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyIntentService;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,10 +24,10 @@ public class MainActivity extends AppCompatActivity {
         stopService.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent serviceIntent = new Intent(MainActivity.this, CompleteActivity.class);
-                startActivity(serviceIntent);
+                Intent serviceIntent = new Intent(MainActivity.this, LinkifyIntentService.class);
+                //startActivity(serviceIntent);
 
-                //stopService(serviceIntent);
+                stopService(serviceIntent);
 
             }
         });
@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
         createService.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent serviceIntent = new Intent(MainActivity.this, LinkifyIntententService.class);
+                Intent serviceIntent = new Intent(MainActivity.this, LinkifyIntentService.class);
 
                 ContextCompat.startForegroundService(MainActivity.this, serviceIntent);
 

@@ -16,6 +16,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+import pk.edu.uaf.linkify.CallActivity;
 import pk.edu.uaf.linkify.MainActivity;
 
 import static pk.edu.uaf.linkify.BroadCastReceivers.App.CHANNEL_ID;
@@ -51,7 +52,7 @@ public class ClientWorker implements Runnable {
             System.out.println("in or out failed");
             System.exit(-1);
         }
-        StringBuilder builder = new StringBuilder();
+        String s = "";
         while(true){
             try{
                 line = in.readLine();
@@ -59,13 +60,20 @@ public class ClientWorker implements Runnable {
                 //Send data back to client
                 //out.println(line);
                 //Append data to text area
-                showNotification(line);
+                s += line;
             }catch (IOException e) {
                 e.printStackTrace();
                 Log.d(TAG, "run: ");
                 break;
             }
         }
+        Log.d("CallActivity", "run: "+s);
+        showNotification(s);
+        Intent callIntent = new Intent(context , CallActivity.class);
+        callIntent.putExtra("json",s);
+        //callIntent.putExtra("socket",client)
+        callIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(callIntent);
         try {
             in.close();
             out.close();

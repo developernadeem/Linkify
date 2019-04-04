@@ -1,5 +1,7 @@
 package pk.edu.uaf.linkify.Adapters;
 
+import android.content.Context;
+import android.content.Intent;
 import android.net.nsd.NsdServiceInfo;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
@@ -21,8 +23,13 @@ import pk.edu.uaf.linkify.R;
 public class MyServicesRecyclerAdapter extends RecyclerView.Adapter<MyServicesRecyclerAdapter.MyViewHolder> {
 
     List<NsdServiceInfo> myServices;
+    private  ClickListener mListener;
+    public interface ClickListener{
+        void ItemClickListener(NsdServiceInfo info);
+    }
 
-    public MyServicesRecyclerAdapter(List<NsdServiceInfo> myServices) {
+    public MyServicesRecyclerAdapter(List<NsdServiceInfo> myServices , Context context) {
+        mListener = (ClickListener)context;
         this.myServices = myServices;
     }
 
@@ -40,7 +47,8 @@ public class MyServicesRecyclerAdapter extends RecyclerView.Adapter<MyServicesRe
         myViewHolder.container.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Thread msg = new Thread(new Runnable() {
+                mListener.ItemClickListener(info);
+                /*Thread msg = new Thread(new Runnable() {
                     @Override
                     public void run() {
                         try{
@@ -56,7 +64,7 @@ public class MyServicesRecyclerAdapter extends RecyclerView.Adapter<MyServicesRe
                         }
                     }
                 });
-                msg.start();
+                msg.start();*/
             }
         });
 //        int port = serviceInfo.getPort();
