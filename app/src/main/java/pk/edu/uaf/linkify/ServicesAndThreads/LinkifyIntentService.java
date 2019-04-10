@@ -14,6 +14,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.PowerManager;
+import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
@@ -30,7 +31,10 @@ import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
 
 
 import pk.edu.uaf.linkify.CallActivity;
@@ -38,33 +42,40 @@ import pk.edu.uaf.linkify.CallActivity;
 import static pk.edu.uaf.linkify.BroadCastReceivers.App.CHANNEL_ID;
 
 public class LinkifyIntentService extends IntentService {
-    private static final String TAG = "LinkifyIntentService";
-    /** ID used for notifications*/
+    private static final String TAG = "dfjijijofowepoewfjewop";
+    /**
+     * ID used for notifications
+     */
     public static final int ID = 11;
+
     /**
-    *Server Socket for all incoming connections
-    */
+     * Server Socket for all incoming connections
+     */
     private ServerSocket mServerSocket;
-    private  Socket client;
+    private Socket client;
     /**
-    * @mNsdManer for @NsdManager
-    */
+     * @mNsdManer for @NsdManager
+     */
     private NsdManager mNsdManager;
     private NsdManager.RegistrationListener mRegistrationListener;
-    private  Messenger messenger = new Messenger(new IncomingHandler(this));
+    private Messenger messenger = new Messenger(new IncomingHandler(this));
     private PowerManager.WakeLock wakeLock;
 
-    private final IBinder binder = new ServiceBinder();
-    /** Keeps track of all current registered clients. */
-    private  static ArrayList<Messenger> mClients = new ArrayList<>();
-    /** Holds last value set by a client. */
+    /**
+     * Keeps track of all current registered clients.
+     */
+    private Messenger mClientActivity;
+    /**
+     * Holds last value set by a client.
+     */
     int mValue = 0;
     /**
      * Command to the service to register a client, receiving callbacks
      * from the service.
      */
     public static final int MSG_REGISTER_CLIENT = 1;
-
+    private boolean isBound = false;
+    List<JSONObject> messageQueue = new ArrayList<>();
     /**
      * Command to the service to unregister a client, ot stop receiving callbacks
      * from the service.
@@ -114,41 +125,42 @@ public class LinkifyIntentService extends IntentService {
 
         try {
             client = mServerSocket.accept();
-            Log.d(TAG, "onHandleIntent: "+client.toString());
+            Log.d(TAG, "onHandleIntent: " + client.toString());
             InputStream in = client.getInputStream();
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(client.getOutputStream());
             ObjectInputStream objectInputStream = new ObjectInputStream(in);
-            while (true){
-                String obj= (String) objectInputStream.readObject();
-                Log.d(TAG, "onHandleIntent: "+obj);
+            while (true) {
+                String obj = (String) objectInputStream.readObject();
+                Log.d(TAG, "onHandleIntent: " + obj);
                 if (obj == null) break;
                 try {
                     JSONObject json = new JSONObject(obj);
-                    if (json.getString("type").equals("offer")){
+                    if (json.getString("type").equals("offer")) {
                         Log.d(TAG, "onHandleIntent: offer Received");
                         startActivityForCall(obj);
-                    }
-                    else if (json.getString("type").equals("candidate")){
+                    } else if (json.getString("type").equals("candidate")) {
                         Log.d(TAG, "onHandleIntent: candidate Received");
                         //send candidate
-                        for (int i=mClients.size()-1; i>=0; i--) {
-                            try {
+                        try {
+
+                            if (mClientActivity != null){
                                 Message msg = Message.obtain();
                                 msg.what = MSG_SEND_ICE;
                                 msg.arg1 = mValue;
                                 msg.obj = json;
-
-                                mClients.get(i).send(msg);
+                                mClientActivity.send(msg);
                                 msg.recycle();
-                            } catch (android.os.RemoteException e) {
-                                // The client is dead.  Remove it from the list;
-                                // we are going through the list from back to front
-                                // so this is safe to do inside the loop.
-                                mClients.remove(i);
                             }
+                            else {
+                                messageQueue.add(json);
+                            }
+                        } catch (android.os.RemoteException e) {
+                            // The client is dead.  Remove it from the list;
+                            // we are going through the list from back to front
+                            // so this is safe to do inside the loop.
+
                         }
                     }
-
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -159,7 +171,7 @@ public class LinkifyIntentService extends IntentService {
             e.printStackTrace();
         }
         /*while(true){
-            *//*ClientWorker w;
+         *//*ClientWorker w;
             try{
             //server.accept returns a client connection
                 w = new ClientWorker(mServerSocket.accept(), this);
@@ -176,9 +188,9 @@ public class LinkifyIntentService extends IntentService {
     }
 
     private void startActivityForCall(String s) {
-        Log.d("CallActivity", "run: "+s);
-        Intent callIntent = new Intent(this , CallActivity.class);
-        callIntent.putExtra("json",s);
+        Log.d("CallActivity", "run: " + s);
+        Intent callIntent = new Intent(this, CallActivity.class);
+        callIntent.putExtra("json", s);
         //callIntent.putExtra("socket",client)
         callIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(callIntent);
@@ -192,17 +204,18 @@ public class LinkifyIntentService extends IntentService {
         mNsdManager.unregisterService(mRegistrationListener);
         try {
             mServerSocket.close();
-            if (client!=null) client.close();
+            if (client != null) client.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
     public int initializeServerSocket() {
         // Initialize a server socket on the next available port.
         try {
             mServerSocket = new ServerSocket(0);
         } catch (IOException e) {
-            Log.d("ERROR",e.toString());
+            Log.d("ERROR", e.toString());
             e.printStackTrace();
         }
 
@@ -222,6 +235,7 @@ public class LinkifyIntentService extends IntentService {
                 serviceInfo, NsdManager.PROTOCOL_DNS_SD, mRegistrationListener);
         Log.d(TAG, "registerService: Should be registered");
     }
+
     public void initializeRegistrationListener() {
         mRegistrationListener = new NsdManager.RegistrationListener() {
 
@@ -237,7 +251,7 @@ public class LinkifyIntentService extends IntentService {
 
             @Override
             public void onRegistrationFailed(NsdServiceInfo serviceInfo, int errorCode) {
-                Log.d(TAG, "onRegistrationFailed: "+errorCode);
+                Log.d(TAG, "onRegistrationFailed: " + errorCode);
                 // Registration failed! Put debugging code here to determine why.
             }
 
@@ -254,12 +268,6 @@ public class LinkifyIntentService extends IntentService {
         };
     }
 
-    public class ServiceBinder extends Binder {
-        LinkifyIntentService getService() {
-            return LinkifyIntentService.this;
-        }
-    }
-
     private static class IncomingHandler extends Handler {
         private WeakReference<LinkifyIntentService> mService;
 
@@ -270,18 +278,23 @@ public class LinkifyIntentService extends IntentService {
         @Override
         public void handleMessage(Message msg) {
             Messenger activityMessenger = msg.replyTo;
-            Log.i(TAG, "Service received message: " + msg);
+            Log.i("knjkkjk", "Service received message: " + msg);
 
             switch (msg.what) {
                 case MSG_REGISTER_CLIENT:
-                    mClients.add(msg.replyTo);
+                    mService.get().mClientActivity = msg.replyTo;
+                    mService.get().sendenquedMessages();
                     break;
                 case MSG_UNREGISTER_CLIENT:
-                    mClients.remove(msg.replyTo);
+                    mService.get().mClientActivity = null;
+                    ;
                     break;
                 case MSG_SEND_SDP:
-                        LinkifyIntentService service = mService.get();
-                        service.handleMsg(msg);
+                    mService.get().handleMsg(msg);
+
+                    break;
+                case MSG_SEND_ICE:
+                    mService.get().handleMsg(msg);
 
                     break;
                 default:
@@ -296,12 +309,12 @@ public class LinkifyIntentService extends IntentService {
         return messenger.getBinder();
     }
 
-    public void handleMsg(Message msg){
+    public void handleMsg(Message msg) {
         AppExecutor.getInstance().getNetworkExecutor().execute(new Runnable() {
             @Override
             public void run() {
                 try {
-                    Log.d(TAG, "run: sending object");
+                    Log.d(TAG, "run: sending object" + msg.toString());
 
                     OutputStream out = client.getOutputStream();
                     ObjectOutputStream o = new ObjectOutputStream(out);
@@ -312,5 +325,21 @@ public class LinkifyIntentService extends IntentService {
                 }
             }
         });
+    }
+    void sendenquedMessages(){
+        if (!messageQueue.isEmpty()) {
+            for (JSONObject message : messageQueue) {
+                try {
+                    Message msg = Message.obtain();
+                    msg.what = MSG_SEND_ICE;
+                    msg.arg1 = mValue;
+                    msg.obj = message;
+                    mClientActivity.send(msg);
+                    //msg.recycle();
+                } catch (RemoteException e) {
+                    Log.d(TAG, "handleMessage: " + e.getMessage());
+                }
+            }
+        }
     }
 }

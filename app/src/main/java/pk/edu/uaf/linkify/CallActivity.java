@@ -57,29 +57,36 @@ public class CallActivity extends AppCompatActivity {
     public static final int VIDEO_RESOLUTION_HEIGHT = 720;
     public static final int FPS = 30;
     private ObjectOutputStream o;
-    private  JSONObject candidate = null;
+    private JSONObject candidate = null;
     private boolean isOfferSent = false;
     private boolean isCandidateSent = false;
 
-    private static final  int IS_CANDIATE = 18;
-    private static final  int IS_OFFER = 19;
+    private static final int IS_CANDIATE = 18;
+    private static final int IS_OFFER = 19;
 
-    private static final String TAG = "CallActivity";
+    private static final String TAG = "CallActivty";
     private static final int RC_CALL = 111;
     /**
      * Target we publish for clients to send messages to IncomingHandler.
      */
     final Messenger mMessenger = new Messenger(new IncomingHandler(this));
-    /** Messenger for communicating with service. */
+    /**
+     * Messenger for communicating with service.
+     */
     Messenger mService = null;
-    /** Flag indicating whether we have called bind on the service. */
+    /**
+     * Flag indicating whether we have called bind on the service.
+     */
     boolean mIsBound;
-    /** Some text view we are using to show state information. */
+    /**
+     * Some text view we are using to show state information.
+     */
     private boolean isInitiator;
     private boolean isChannelReady;
     private boolean isStarted;
 
-    private SurfaceViewRenderer surfaceView ,surfaceView2;;
+    private SurfaceViewRenderer surfaceView, surfaceView2;
+    ;
     private boolean connected = false;
 
     private PeerConnection peerConnection;
@@ -95,7 +102,7 @@ public class CallActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_call);
         String[] perms = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO};
-        if (!EasyPermissions.hasPermissions(this, perms)){
+        if (!EasyPermissions.hasPermissions(this, perms)) {
             EasyPermissions.requestPermissions(this, "Need some permissions", RC_CALL, perms);
         }
         Intent intent = getIntent();
@@ -113,7 +120,7 @@ public class CallActivity extends AppCompatActivity {
         initializePeerConnections();
 
         startStreamingVideo();
-        if (intent.hasExtra("info")){
+        if (intent.hasExtra("info")) {
             mInfo = intent.getParcelableExtra("info");
             isInitiator = true;
             doCall();
@@ -124,8 +131,8 @@ public class CallActivity extends AppCompatActivity {
                     ObjectInputStream i;
                     try {
                         Log.d(TAG, "onCreate: Waiting for msgs");
-                        if (mSocket == null){
-                            mSocket = new Socket(mInfo.getHost(),mInfo.getPort());
+                        if (mSocket == null) {
+                            mSocket = new Socket(mInfo.getHost(), mInfo.getPort());
                             mSocket.setKeepAlive(true);
                             o = new ObjectOutputStream(mSocket.getOutputStream());
                         }
@@ -133,26 +140,24 @@ public class CallActivity extends AppCompatActivity {
 
                         in = mSocket.getInputStream();
                         i = new ObjectInputStream(in);
-                        while (true){
+                        while (true) {
                             String obj = (String) i.readObject();
-                            if (obj == null)break;
+                            if (obj == null) break;
                             try {
                                 JSONObject json = new JSONObject(obj);
-                                if (json.getString("type").equals("answer")){
-                                    Log.d(TAG, "onCreate: answer received");
+                                if (json.getString("type").equals("answer")) {
+                                    Log.d(TAG, "onReceived: answer received");
                                     peerConnection.setRemoteDescription(new SimpleSdpObserver(), new SessionDescription(OFFER, json.getString("sdp")));
+                                } else if (json.getString("type").equals("candidate")) {
+                                    Log.d(TAG, "onReceived: candidate received");
+
+                                    IceCandidate candidate = new IceCandidate(json.getString("id"), json.getInt("label"), json.getString("candidate"));
+                                    peerConnection.addIceCandidate(candidate);
+
                                 }
-                                else if (json.getString("type").equals("candidate")){
-                                    Log.d(TAG, "onCreate: candidate received");
-                                    try {
-                                        IceCandidate candidate = new IceCandidate(json.getString("id"), json.getInt("label"), json.getString("candidate"));
-                                        peerConnection.addIceCandidate(candidate);
-                                    } catch (JSONException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }catch (JSONException r){
-                                r.printStackTrace();
+                            } catch (JSONException r) {
+                                Log.d(TAG, "onReceived: " + r.getMessage());
+                                ;
                             }
                         }
                     } catch (IOException e) {
@@ -163,8 +168,7 @@ public class CallActivity extends AppCompatActivity {
                 }
             });
 
-        }
-        else if (intent.hasExtra("json")){
+        } else if (intent.hasExtra("json")) {
             Log.d(TAG, "onCreate: FromService");
             String json = intent.getStringExtra("json");
             doBindService();
@@ -173,12 +177,13 @@ public class CallActivity extends AppCompatActivity {
                 JSONObject obj = new JSONObject(json);
                 doAnswer(obj);
             } catch (JSONException e) {
-                Log.d(TAG, "onCreate: "+e.toString());
+                Log.d(TAG, "onCreate: " + e.toString());
                 //e.printStackTrace();
             }
         }
 
     }
+
     private void startStreamingVideo() {
         MediaStream mediaStream = factory.createLocalMediaStream("ARDAMS");
         mediaStream.addTrack(videoTrackFromCamera);
@@ -206,25 +211,23 @@ public class CallActivity extends AppCompatActivity {
         }, sdpMediaConstraints);
     }
 
-    private void sendMessage(final JSONObject message,int from) {
-        switch (from){
+    private void sendMessage(final JSONObject message, int from) {
+        switch (from) {
             case IS_CANDIATE:
-                if (!isOfferSent){
+                if (!isOfferSent) {
                     isCandidateSent = true;
                     candidate = message;
 
-                }
-                else
-                serializeMessage(message);
+                } else
+                    serializeMessage(message);
                 break;
             case IS_OFFER:
-                if(!isCandidateSent){
+                if (!isCandidateSent) {
                     //send message
                     serializeMessage(message);
                     isOfferSent = true;
 
-                }
-                else {
+                } else {
                     serializeMessage(message);
                     serializeMessage(candidate);
                 }
@@ -232,19 +235,20 @@ public class CallActivity extends AppCompatActivity {
 
 
     }
-    private void serializeMessage(JSONObject msg){
+
+    private void serializeMessage(JSONObject msg) {
         executor.getSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
                 try {
-                    if (mSocket == null){
+                    if (mSocket == null) {
                         mSocket = new Socket(mInfo.getHost(), mInfo.getPort());
                         mSocket.setKeepAlive(true);
                         Log.d(TAG, "sendMessage: socket initialized");
                         o = new ObjectOutputStream(mSocket.getOutputStream());
                     }
 
-                    Log.d(TAG, "sendMessage: "+msg.toString());
+                    Log.d(TAG, "sendMessage: " + msg.toString());
                     o.writeObject(msg.toString());
                     o.flush();
 
@@ -273,7 +277,7 @@ public class CallActivity extends AppCompatActivity {
                     Message msg = Message.obtain();
                     msg.what = MSG_SEND_SDP;
                     msg.obj = message.toString();
-                    Log.d(TAG, "Sending message to service: "+ message.toString());
+                    Log.d("dfjijijofowepoewfjewop", "Sending message to service: " + message.toString());
                     mService.send(msg);
                     msg.recycle();
                 } catch (JSONException e) {
@@ -284,9 +288,11 @@ public class CallActivity extends AppCompatActivity {
             }
         }, new MediaConstraints());
     }
+
     private void initializePeerConnections() {
         peerConnection = createPeerConnection(factory);
     }
+
     private PeerConnection createPeerConnection(PeerConnectionFactory factory) {
         ArrayList<PeerConnection.IceServer> iceServers = new ArrayList<>();
         //iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302"));
@@ -328,20 +334,20 @@ public class CallActivity extends AppCompatActivity {
 
                     Log.d(TAG, "onIceCandidate: sending candidate " + message);
                     if (isInitiator) {
-                        sendMessage(message,IS_CANDIATE);
-                    }
-                    else{
+                        sendMessage(message, IS_CANDIATE);
+                    } else {
+                        Log.d("dfjijijofowepoewfjewop", "onIceCandidate: sending candidate " + message);
                         Message msg = Message.obtain();
-                        msg.what = MSG_SEND_SDP;
+                        msg.what = MSG_SEND_ICE;
                         msg.obj = message.toString();
                         mService.send(msg);
                         msg.recycle();
                     }
                     //sendMessage(sendMessage);
                 } catch (JSONException e) {
-                    e.printStackTrace();
+                    Log.d("dfjijijofowepoewfjewop", "onIceCandidate: " +e.getMessage());
                 } catch (RemoteException e) {
-                    e.printStackTrace();
+                    Log.d("dfjijijofowepoewfjewop", "onIceCandidate: " +e.getMessage());
                 }
             }
 
@@ -377,11 +383,13 @@ public class CallActivity extends AppCompatActivity {
 
         return factory.createPeerConnection(rtcConfig, pcConstraints, pcObserver);
     }
+
     private void initializePeerConnectionFactory() {
         PeerConnectionFactory.initializeAndroidGlobals(this, true, true, true);
         factory = new PeerConnectionFactory(null);
         factory.setVideoHwAccelerationOptions(rootEglBase.getEglBaseContext(), rootEglBase.getEglBaseContext());
     }
+
     private void createVideoTrackFromCameraAndShowIt() {
         VideoCapturer videoCapturer = createVideoCapturer();
         VideoSource videoSource = factory.createVideoSource(videoCapturer);
@@ -404,6 +412,7 @@ public class CallActivity extends AppCompatActivity {
         surfaceView2.setEnableHardwareScaler(true);
         surfaceView2.setMirror(true);
     }
+
     private VideoCapturer createVideoCapturer() {
         VideoCapturer videoCapturer;
         if (useCamera2()) {
@@ -413,6 +422,7 @@ public class CallActivity extends AppCompatActivity {
         }
         return videoCapturer;
     }
+
     private VideoCapturer createCameraCapturer(CameraEnumerator enumerator) {
         final String[] deviceNames = enumerator.getDeviceNames();
 
@@ -442,6 +452,7 @@ public class CallActivity extends AppCompatActivity {
     private boolean useCamera2() {
         return Camera2Enumerator.isSupported(this);
     }
+
     //service related work
     private ServiceConnection connection = new ServiceConnection() {
         @Override
@@ -456,11 +467,6 @@ public class CallActivity extends AppCompatActivity {
                 Message msg = Message.obtain(null,
                         LinkifyIntentService.MSG_REGISTER_CLIENT);
                 msg.replyTo = mMessenger;
-                mService.send(msg);
-
-                // Give it some value as an example.
-                msg = Message.obtain(null,
-                        MSG_SEND_SDP, this.hashCode(), 0);
                 mService.send(msg);
             } catch (RemoteException e) {
                 // In this case the service has crashed before we could even
@@ -507,7 +513,7 @@ public class CallActivity extends AppCompatActivity {
             candidate = new IceCandidate(json.getString("id"), json.getInt("label"), json.getString("candidate"));
             peerConnection.addIceCandidate(candidate);
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.d(TAG, "receiveMsgFromSerive: " + e.getMessage());
         }
     }
 
