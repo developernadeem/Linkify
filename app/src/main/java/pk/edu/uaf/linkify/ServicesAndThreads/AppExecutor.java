@@ -4,13 +4,14 @@ import android.os.Handler;
 import android.os.Looper;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class AppExecutor  {
     private Executor singleThreadExecutor;
     private Executor mainThread;
     private static AppExecutor appExecutor;
-    private Executor networkExecutor;
+    private ExecutorService networkExecutor;
     public static AppExecutor getInstance(){
         if (appExecutor == null){
             appExecutor = new AppExecutor();
@@ -18,7 +19,7 @@ public class AppExecutor  {
         return appExecutor;
     }
     private AppExecutor(){
-        singleThreadExecutor =  Executors.newSingleThreadExecutor();
+        singleThreadExecutor =  Executors.newFixedThreadPool(3);
         networkExecutor =  Executors.newFixedThreadPool(3);
         mainThread = new MainThreadExecutor();
 
@@ -27,7 +28,7 @@ public class AppExecutor  {
     public Executor getSingleThreadExecutor() {
         return singleThreadExecutor;
     }
-    public Executor getNetworkExecutor(){  return networkExecutor; }
+    public ExecutorService getNetworkExecutor(){  return networkExecutor; }
 
     public Executor getMainThread() {
         return mainThread;

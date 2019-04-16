@@ -9,12 +9,9 @@ import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import android.os.Binder;
 import android.os.Build;
-import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.os.Messenger;
 import android.os.PowerManager;
-import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
@@ -23,21 +20,24 @@ import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.lang.ref.WeakReference;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
-
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.BlockingQueue;
 
 import pk.edu.uaf.linkify.CallActivity;
+import pk.edu.uaf.linkify.Interfaces.ServiceCallBacks;
 
 import static pk.edu.uaf.linkify.BroadCastReceivers.App.CHANNEL_ID;
 
@@ -58,35 +58,28 @@ public class LinkifyIntentService extends IntentService {
      */
     private NsdManager mNsdManager;
     private NsdManager.RegistrationListener mRegistrationListener;
-    private Messenger messenger = new Messenger(new IncomingHandler(this));
+
     private PowerManager.WakeLock wakeLock;
 
-    /**
-     * Keeps track of all current registered clients.
-     */
-    private Messenger mClientActivity;
-    /**
-     * Holds last value set by a client.
-     */
-    int mValue = 0;
-    /**
-     * Command to the service to register a client, receiving callbacks
-     * from the service.
-     */
-    public static final int MSG_REGISTER_CLIENT = 1;
-    private boolean isBound = false;
-    List<JSONObject> messageQueue = new ArrayList<>();
-    /**
-     * Command to the service to unregister a client, ot stop receiving callbacks
-     * from the service.
-     */
-    public static final int MSG_UNREGISTER_CLIENT = 2;
 
-    /**
-     * Command to service to set a new value.
-     */
-    public static final int MSG_SEND_SDP = 3;
-    public static final int MSG_SEND_ICE = 4;
+    // Binder given to clients
+    private final IBinder binder = new LocalBinder();
+    // Registered callbacks
+    private ServiceCallBacks serviceCallbacks;
+
+
+    // Class used for the client Binder.
+    public class LocalBinder extends Binder {
+        public LinkifyIntentService getService() {
+            // Return this instance of MyService so clients can call public methods
+            return LinkifyIntentService.this;
+        }
+    }
+
+
+    List<JSONObject> messageQueue = new ArrayList<>();
+    BlockingQueue<String> candidateQue = new ArrayBlockingQueue<>(10);
+
 
     public LinkifyIntentService() {
         super("LinkifyIntentService");
@@ -125,15 +118,36 @@ public class LinkifyIntentService extends IntentService {
 
         try {
             client = mServerSocket.accept();
-            Log.d(TAG, "onHandleIntent: " + client.toString());
-            InputStream in = client.getInputStream();
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(client.getOutputStream());
-            ObjectInputStream objectInputStream = new ObjectInputStream(in);
+            AppExecutor.getInstance().getSingleThreadExecutor().execute(new Runnable() {
+                @Override
+                public void run() {
+                    DataOutputStream objectOutputStream;
+                    try {
+                        objectOutputStream = new DataOutputStream(new BufferedOutputStream(client.getOutputStream()));
+                        while (!Thread.currentThread().isInterrupted()){
+                            String msg = candidateQue.take();
+                            Log.d("ffffffff", "Sending from service:"+msg);
+                            objectOutputStream.writeUTF(msg);
+                            objectOutputStream.flush();
+                        }
+                    }catch (Exception e){
+                        Log.d(TAG, "run: "+e.getMessage());
+                    }
+
+                }
+            });
+            Log.d(TAG, "client connected: " + client.toString());
+//            if (objectOutputStream!= null) {
+//                objectOutputStream.reset();
+//            }
+
+            DataInputStream in = new DataInputStream(new
+                    BufferedInputStream(client.getInputStream()));
             while (true) {
-                String obj = (String) objectInputStream.readObject();
-                Log.d(TAG, "onHandleIntent: " + obj);
+                String obj = (String) in.readUTF();
+                Log.d("ffffffff", " Receding from service: " + obj);
                 if (obj == null) break;
-                try {
+
                     JSONObject json = new JSONObject(obj);
                     if (json.getString("type").equals("offer")) {
                         Log.d(TAG, "onHandleIntent: offer Received");
@@ -141,59 +155,30 @@ public class LinkifyIntentService extends IntentService {
                     } else if (json.getString("type").equals("candidate")) {
                         Log.d(TAG, "onHandleIntent: candidate Received");
                         //send candidate
-                        try {
-
-                            if (mClientActivity != null){
-                                Message msg = Message.obtain();
-                                msg.what = MSG_SEND_ICE;
-                                msg.arg1 = mValue;
-                                msg.obj = json;
-                                mClientActivity.send(msg);
-                                msg.recycle();
-                            }
-                            else {
-                                messageQueue.add(json);
-                            }
-                        } catch (android.os.RemoteException e) {
-                            // The client is dead.  Remove it from the list;
-                            // we are going through the list from back to front
-                            // so this is safe to do inside the loop.
-
+                        if (serviceCallbacks != null) {
+                            serviceCallbacks.getMessageFromService(json);
+                        } else {
+                            messageQueue.add(json);
                         }
+
                     }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+
             }
+            in.close();
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+        }catch (Exception ignored){
+
         }
-        /*while(true){
-         *//*ClientWorker w;
-            try{
-            //server.accept returns a client connection
-                w = new ClientWorker(mServerSocket.accept(), this);
-                Thread t = new Thread(w);
-                t.start();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }*//*
 
-
-
-
-        }*/
     }
 
     private void startActivityForCall(String s) {
         Log.d("CallActivity", "run: " + s);
-        Intent callIntent = new Intent(this, CallActivity.class);
-        callIntent.putExtra("json", s);
-        //callIntent.putExtra("socket",client)
-        callIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(callIntent);
+        Intent dialogIntent = new Intent(getBaseContext(), CallActivity.class);
+        dialogIntent.putExtra("json", s);
+        dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        getApplication().startActivity(dialogIntent);
     }
 
     @Override
@@ -203,8 +188,8 @@ public class LinkifyIntentService extends IntentService {
         wakeLock.release();
         mNsdManager.unregisterService(mRegistrationListener);
         try {
-            mServerSocket.close();
             if (client != null) client.close();
+            mServerSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -268,78 +253,33 @@ public class LinkifyIntentService extends IntentService {
         };
     }
 
-    private static class IncomingHandler extends Handler {
-        private WeakReference<LinkifyIntentService> mService;
-
-        IncomingHandler(LinkifyIntentService mService) {
-            this.mService = new WeakReference<>(mService);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            Messenger activityMessenger = msg.replyTo;
-            Log.i("knjkkjk", "Service received message: " + msg);
-
-            switch (msg.what) {
-                case MSG_REGISTER_CLIENT:
-                    mService.get().mClientActivity = msg.replyTo;
-                    mService.get().sendenquedMessages();
-                    break;
-                case MSG_UNREGISTER_CLIENT:
-                    mService.get().mClientActivity = null;
-                    ;
-                    break;
-                case MSG_SEND_SDP:
-                    mService.get().handleMsg(msg);
-
-                    break;
-                case MSG_SEND_ICE:
-                    mService.get().handleMsg(msg);
-
-                    break;
-                default:
-                    super.handleMessage(msg);
-            }
-        }
-    }
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return messenger.getBinder();
+        return binder;
     }
 
-    public void handleMsg(Message msg) {
-        AppExecutor.getInstance().getNetworkExecutor().execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Log.d(TAG, "run: sending object" + msg.toString());
-
-                    OutputStream out = client.getOutputStream();
-                    ObjectOutputStream o = new ObjectOutputStream(out);
-                    o.writeObject(msg.obj);
-                    out.flush();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-    void sendenquedMessages(){
+    public void setCallbacks(ServiceCallBacks callbacks) {
+        serviceCallbacks = callbacks;
         if (!messageQueue.isEmpty()) {
             for (JSONObject message : messageQueue) {
-                try {
-                    Message msg = Message.obtain();
-                    msg.what = MSG_SEND_ICE;
-                    msg.arg1 = mValue;
-                    msg.obj = message;
-                    mClientActivity.send(msg);
-                    //msg.recycle();
-                } catch (RemoteException e) {
-                    Log.d(TAG, "handleMessage: " + e.getMessage());
-                }
+                serviceCallbacks.getMessageFromService(message);
             }
+            messageQueue.clear();
         }
+
     }
+
+    public  void sendMessageTOService(String message) {
+        Log.d(TAG, "sendMessageTOService: "+message);
+        try {
+            candidateQue.put(message);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
 }

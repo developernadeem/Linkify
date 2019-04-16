@@ -90,7 +90,7 @@ public class ClientWorker implements Runnable {
         Notification notification = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setContentTitle("Linkify Background Service")
                 .setContentText(line)
-                .setSmallIcon(android.R.drawable.ic_dialog_email)
+                .setSmallIcon(android.R.drawable.btn_star)
                 .setContentIntent(pendingIntent)
                 .build();
         notificationManager.notify(/* id */(int)System.currentTimeMillis(), notification);

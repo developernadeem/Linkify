@@ -8,6 +8,8 @@ import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.webrtc.AudioSource;
+import org.webrtc.AudioTrack;
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
@@ -58,6 +60,7 @@ public class CompleteActivity extends AppCompatActivity {
     private EglBase rootEglBase;
     private PeerConnectionFactory factory;
     private VideoTrack videoTrackFromCamera;
+    private AudioTrack audioTrack;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -245,6 +248,11 @@ public class CompleteActivity extends AppCompatActivity {
         VideoSource videoSource = factory.createVideoSource(videoCapturer);
         videoCapturer.startCapture(VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_HEIGHT, FPS);
 
+        AudioSource audioSource = factory.createAudioSource(new MediaConstraints());
+
+        //audio traces
+        audioTrack = factory.createAudioTrack(AUDIO_TRACK_ID,audioSource);
+
         videoTrackFromCamera = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
         videoTrackFromCamera.setEnabled(true);
         videoTrackFromCamera.addRenderer(new VideoRenderer(surfaceView));
@@ -256,6 +264,7 @@ public class CompleteActivity extends AppCompatActivity {
 
     private void startStreamingVideo() {
         MediaStream mediaStream = factory.createLocalMediaStream("ARDAMS");
+        mediaStream.addTrack(audioTrack);
         mediaStream.addTrack(videoTrackFromCamera);
         peerConnection.addStream(mediaStream);
 
@@ -315,7 +324,8 @@ public class CompleteActivity extends AppCompatActivity {
 
             @Override
             public void onAddStream(MediaStream mediaStream) {
-                Log.d(TAG, "onAddStream: " + mediaStream.videoTracks.size());
+                Log.d(TAG, "onAddStream: " + mediaStream.audioTracks.size());
+                //mediaStream.audioTracks.size();
                 VideoTrack remoteVideoTrack = mediaStream.videoTracks.get(0);
                 remoteVideoTrack.setEnabled(true);
                 remoteVideoTrack.addRenderer(new VideoRenderer(surfaceView2));
