@@ -8,7 +8,7 @@ import android.content.ServiceConnection;
 import android.net.nsd.NsdServiceInfo;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 
 import org.json.JSONException;
@@ -37,8 +37,6 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -523,7 +521,7 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
         try {
             mSocket.close();
             mSocket = null;
-        } catch (IOException e) {
+        } catch (Exception e) {
             Log.d(TAG, "onDestroy: " + e.getMessage());
         }
         doUnbindService();

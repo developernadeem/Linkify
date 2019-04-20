@@ -10,14 +10,12 @@ import android.net.nsd.NsdServiceInfo;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
-import android.os.Message;
 import android.os.PowerManager;
-import android.support.annotation.Nullable;
-import android.support.v4.app.NotificationCompat;
+import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
@@ -25,15 +23,11 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
 
 import pk.edu.uaf.linkify.CallActivity;
@@ -186,11 +180,12 @@ public class LinkifyIntentService extends IntentService {
         super.onDestroy();
         Log.d(TAG, "onDestroy");
         wakeLock.release();
-        mNsdManager.unregisterService(mRegistrationListener);
         try {
+        mNsdManager.unregisterService(mRegistrationListener);
+
             if (client != null) client.close();
             mServerSocket.close();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
