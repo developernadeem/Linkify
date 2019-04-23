@@ -119,9 +119,15 @@ public class DiscoverService extends AppCompatActivity implements MyServicesRecy
     }
 
     @Override
-    public void ItemClickListener(NsdServiceInfo info) {
-        Intent call = new Intent(this,CallActivity.class);
-        call.putExtra("info", info);
-        startActivity(call);
+    public void ItemClickListener(NsdServiceInfo info,int which) {
+        if (which == 0) {
+            Intent call = new Intent(this, CallActivity.class);
+            call.putExtra("info", info);
+            startActivity(call);
+        }else if (which == 1){
+            Intent call = new Intent(this, DataChannelActivity.class);
+            call.putExtra("info", info);
+            startActivity(call);
+        }
     }
 }

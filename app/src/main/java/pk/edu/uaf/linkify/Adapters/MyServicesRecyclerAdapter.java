@@ -1,6 +1,8 @@
 package pk.edu.uaf.linkify.Adapters;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.net.nsd.NsdServiceInfo;
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -18,11 +20,13 @@ public class MyServicesRecyclerAdapter extends RecyclerView.Adapter<MyServicesRe
 
     List<NsdServiceInfo> myServices;
     private  ClickListener mListener;
+    private Context mContext;
     public interface ClickListener{
-        void ItemClickListener(NsdServiceInfo info);
+        void ItemClickListener(NsdServiceInfo info,int which);
     }
 
     public MyServicesRecyclerAdapter(List<NsdServiceInfo> myServices , Context context) {
+        mContext = context;
         mListener = (ClickListener)context;
         this.myServices = myServices;
     }
@@ -37,11 +41,17 @@ public class MyServicesRecyclerAdapter extends RecyclerView.Adapter<MyServicesRe
     public void onBindViewHolder(@NonNull MyViewHolder myViewHolder, int i) {
         final NsdServiceInfo info = myServices.get(i);
         myViewHolder.port.setText(String.valueOf(info.getPort()));
-        myViewHolder.ipAddress.setText(info.getHost().toString());
+        myViewHolder.ipAddress.setText(info.getServiceName());
         myViewHolder.container.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mListener.ItemClickListener(info);
+                String[] items = {"Call","Message"};
+                new AlertDialog.Builder(mContext)
+                        .setTitle("Please Pic Option")
+                        .setItems(R.array.options, (dialog, which) -> {
+                            mListener.ItemClickListener(info,which);
+                        }).show();
+
                 /*Thread msg = new Thread(new Runnable() {
                     @Override
                     public void run() {

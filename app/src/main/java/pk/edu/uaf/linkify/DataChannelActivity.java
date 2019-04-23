@@ -1,38 +1,37 @@
 package pk.edu.uaf.linkify;
 
-import android.Manifest;
+import androidx.appcompat.app.AppCompatActivity;
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import pk.edu.uaf.linkify.Interfaces.ServiceCallBacks;
+import pk.edu.uaf.linkify.ServicesAndThreads.AppExecutor;
+import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyIntentService;
+import pk.edu.uaf.linkify.Utils.AppConstant;
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.nsd.NsdServiceInfo;
 import android.os.Bundle;
 import android.os.IBinder;
-import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.webrtc.AudioSource;
-import org.webrtc.AudioTrack;
-import org.webrtc.Camera1Enumerator;
-import org.webrtc.Camera2Enumerator;
-import org.webrtc.CameraEnumerator;
 import org.webrtc.DataChannel;
-import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SessionDescription;
-import org.webrtc.SurfaceViewRenderer;
-import org.webrtc.VideoCapturer;
-import org.webrtc.VideoRenderer;
-import org.webrtc.VideoSource;
-import org.webrtc.VideoTrack;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -40,6 +39,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -48,90 +49,50 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import pk.edu.uaf.linkify.Interfaces.ServiceCallBacks;
-import pk.edu.uaf.linkify.ServicesAndThreads.AppExecutor;
-import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyIntentService;
-import pk.edu.uaf.linkify.Utils.AppConstant;
-import pub.devrel.easypermissions.EasyPermissions;
-
 import static org.webrtc.SessionDescription.Type.ANSWER;
 import static org.webrtc.SessionDescription.Type.OFFER;
 
-public class CallActivity extends AppCompatActivity implements ServiceCallBacks {
-
-
-    private static final String TAG = "gfiyfyfyfyfyfyfyfy";
-
-
-    public static final String VIDEO_TRACK_ID = "ARDAMSv0";
-    public static final String AUDIO_TRACK_ID = "ARDAMSa0";
-    public static final int VIDEO_RESOLUTION_WIDTH = 1280;
-    public static final int VIDEO_RESOLUTION_HEIGHT = 720;
-    public static final int FPS = 30;
-
-    private static final int RC_CALL = 111;
+public class DataChannelActivity extends AppCompatActivity implements ServiceCallBacks {
+    private static final String TAG = "SampleDataChannelAct";
+    public static final int CHUNK_SIZE = 64000;
+    private boolean isInitiator = false;
+    private Socket mSocket;
+    private NsdServiceInfo mInfo;
     private List<String> queueMsg = new ArrayList<>();
-    BlockingQueue<String> queue = new ArrayBlockingQueue<>(10);
-
-
-    /**
-     * Messenger for communicating with service.
-     */
+    private BlockingQueue<String> queue = new ArrayBlockingQueue<>(10);
     private LinkifyIntentService mService = null;
+    AppExecutor appExecutor;
     /**
      * Flag indicating whether we have called bind on the service.
      */
     boolean mIsBound;
-    /**
-     * Some text view we are using to show state information.
-     */
-    private boolean isInitiator = false;
 
-    private SurfaceViewRenderer surfaceView, surfaceView2;
-    ;
-    private boolean connected = false;
-
-    private PeerConnection peerConnection;
-    private EglBase rootEglBase;
     private PeerConnectionFactory factory;
-    private VideoTrack videoTrackFromCamera;
-    private AudioTrack audioTrack;
-    private Socket mSocket;
-    private NsdServiceInfo mInfo;
-    private AppExecutor executor;
+    private PeerConnection localPeerConnection, remotePeerConnection;
+    private DataChannel localDataChannel;
 
+    @BindView(R.id.send)Button btnSend;
+    @BindView(R.id.message)EditText editText;
+    @BindView(R.id.txtmymessage)TextView myLastTextView;
+    @BindView(R.id.txtremotemsg)TextView remoteLastextView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_call);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-        doBindService();
-        String[] perms = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO};
-        if (!EasyPermissions.hasPermissions(this, perms)) {
-            EasyPermissions.requestPermissions(this, "Need some permissions", RC_CALL, perms);
-        }
+        setContentView(R.layout.activity_data_chennel);
+        ButterKnife.bind(this);
+        btnSend.setOnClickListener(v -> sendMessage());
         Intent intent = getIntent();
 
-
-        executor = AppExecutor.getInstance();
-        //connectToSignallingServer();
-
-        initializeSurfaceViews();
+        doBindService();
+        appExecutor = AppExecutor.getInstance();
 
         initializePeerConnectionFactory();
 
-        createVideoTrackFromCameraAndShowIt();
-
         initializePeerConnections();
-
-        startStreamingVideo();
         if (intent.hasExtra("info")) {
             mInfo = intent.getParcelableExtra("info");
             isInitiator = true;
-            Future<Boolean> wait = executor.getNetworkExecutor().submit(new Callable<Boolean>() {
+            Future<Boolean> wait = appExecutor.getNetworkExecutor().submit(new Callable<Boolean>() {
                 @Override
                 public Boolean call()  {
                     try {
@@ -150,7 +111,7 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            executor.getNetworkExecutor().execute(new Runnable() {
+            appExecutor.getNetworkExecutor().execute(new Runnable() {
                 @Override
                 public void run() {
                     DataInputStream in = null;
@@ -163,19 +124,19 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
                             String obj =  in.readUTF();
                             Log.d("dddddddd", "run: Receiving from Activity:"+obj);
                             if (obj == null) break;
-                                JSONObject json = new JSONObject(obj);
-                                if (json.getString("type").equals("answer")) {
-                                    Log.d(TAG, "onReceived: answer received");
-                                    peerConnection.setRemoteDescription(new SimpleSdpObserver(), new SessionDescription(ANSWER, json.getString("sdp")));
+                            JSONObject json = new JSONObject(obj);
+                            if (json.getString("type").equals("answer")) {
+                                Log.d(TAG, "onReceived: answer received");
+                                localPeerConnection.setRemoteDescription(new SimpleSdpObserver(), new SessionDescription(ANSWER, json.getString("sdp")));
 //
-                                } else if (json.getString("type").equals("candidate")) {
-                                    Log.d(TAG, "onReceived: candidate received");
+                            } else if (json.getString("type").equals("candidate")) {
+                                Log.d(TAG, "onReceived: candidate received");
 
 
-                                    IceCandidate candidate = new IceCandidate(json.getString("id"), json.getInt("label"), json.getString("candidate"));
-                                    peerConnection.addIceCandidate(candidate);
+                                IceCandidate candidate = new IceCandidate(json.getString("id"), json.getInt("label"), json.getString("candidate"));
+                                localPeerConnection.addIceCandidate(candidate);
 
-                                }
+                            }
 
                         }
                     } catch (IOException e) {
@@ -193,7 +154,7 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
                     }
                 }
             });
-            executor.getNetworkExecutor().submit(new Runnable() {
+            appExecutor.getNetworkExecutor().submit(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -203,7 +164,7 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
                             String msg = queue.take();
                             Log.d("dddddddd", "run: Sending fromActivity:"+msg);
                             out.writeUTF(msg);
-                            out.writeInt(AppConstant.OFFER_CASE_CALL);
+                            out.writeInt(AppConstant.OFFER_CASE_MESSAGE);
                             out.flush();
                         }
                     }catch (Exception e){
@@ -211,7 +172,7 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
                     }
                 }
             });
-            doCall();
+            SendOffer();
 
         } else if (intent.hasExtra("json")) {
             String json = intent.getStringExtra("json");
@@ -230,27 +191,53 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
 
     }
 
-    private void startStreamingVideo() {
-        MediaStream mediaStream = factory.createLocalMediaStream("ARDAMS");
-        mediaStream.addTrack(audioTrack);
-        mediaStream.addTrack(videoTrackFromCamera);
-        peerConnection.addStream(mediaStream);
-
+    private void initializePeerConnectionFactory() {
+        PeerConnectionFactory.initializeAndroidGlobals(this, true, true, true);
+        factory = new PeerConnectionFactory(null);
     }
 
-    private void doCall() {
+    private void initializePeerConnections() {
+        localPeerConnection = createPeerConnection(factory);
+
+        localDataChannel = localPeerConnection.createDataChannel("sendDataChannel", new DataChannel.Init());
+        localDataChannel.registerObserver(new DataChannel.Observer() {
+            @Override
+            public void onBufferedAmountChange(long l) {
+
+            }
+
+            @Override
+            public void onStateChange() {
+                Log.d(TAG, "onStateChange: " + localDataChannel.state().toString());
+                runOnUiThread(() -> {
+                    if (localDataChannel.state() == DataChannel.State.OPEN) {
+                        btnSend.setEnabled(true);
+                    } else {
+                        btnSend.setEnabled(false);
+                    }
+                });
+            }
+
+            @Override
+            public void onMessage(DataChannel.Buffer buffer) {
+
+            }
+        });
+    }
+
+    private void SendOffer() {
         MediaConstraints sdpMediaConstraints = new MediaConstraints();
 
-        peerConnection.createOffer(new SimpleSdpObserver() {
+        localPeerConnection.createOffer(new SimpleSdpObserver() {
             @Override
             public void onCreateSuccess(SessionDescription sessionDescription) {
                 Log.d(TAG, "onCreateSuccess: offer created");
-                peerConnection.setLocalDescription(new SimpleSdpObserver(), sessionDescription);
+                localPeerConnection.setLocalDescription(new SimpleSdpObserver(), sessionDescription);
                 JSONObject message = new JSONObject();
                 try {
                     message.put("type", "offer");
                     message.put("sdp", sessionDescription.description);
-                    Log.d(TAG, "onCreateSuccess: offercreated"+ message);
+                    Log.d(TAG, "onCreateSuccess: offer Created"+ message);
                     queue.put(message.toString());
                 } catch (Exception e) {
                     Log.d(TAG, "onCreateSuccess: "+e.getMessage());
@@ -258,20 +245,17 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
             }
         }, sdpMediaConstraints);
     }
-
-
-
     private void doAnswer(JSONObject obj) {
         Log.d(TAG, "doAnswer: called");
         try {
-            peerConnection.setRemoteDescription(new SimpleSdpObserver(), new SessionDescription(OFFER, obj.getString("sdp")));
+            localPeerConnection.setRemoteDescription(new SimpleSdpObserver(), new SessionDescription(OFFER, obj.getString("sdp")));
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        peerConnection.createAnswer(new SimpleSdpObserver() {
+        localPeerConnection.createAnswer(new SimpleSdpObserver() {
             @Override
             public void onCreateSuccess(SessionDescription sessionDescription) {
-                peerConnection.setLocalDescription(new SimpleSdpObserver(), sessionDescription);
+                localPeerConnection.setLocalDescription(new SimpleSdpObserver(), sessionDescription);
                 try {
 
 
@@ -293,15 +277,8 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
         }, new MediaConstraints());
     }
 
-    private void initializePeerConnections() {
-        peerConnection = createPeerConnection(factory);
-    }
-
     private PeerConnection createPeerConnection(PeerConnectionFactory factory) {
-        ArrayList<PeerConnection.IceServer> iceServers = new ArrayList<>();
-        //iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302"));
-
-        PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServers);
+        PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(new ArrayList<>());
         MediaConstraints pcConstraints = new MediaConstraints();
 
         PeerConnection.Observer pcObserver = new PeerConnection.Observer() {
@@ -317,7 +294,7 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
 
             @Override
             public void onIceConnectionReceivingChange(boolean b) {
-                Log.d(TAG, "onIceConnectionReceivingChange: ");
+//                Log.d(TAG, "onIceConnectionReceivingChange: ");
             }
 
             @Override
@@ -358,11 +335,7 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
 
             @Override
             public void onAddStream(MediaStream mediaStream) {
-                Log.d(TAG, "onAddStream: " + mediaStream.audioTracks.size());
-                VideoTrack remoteVideoTrack = mediaStream.videoTracks.get(0);
-                remoteVideoTrack.setEnabled(true);
-                remoteVideoTrack.addRenderer(new VideoRenderer(surfaceView2));
-
+                Log.d(TAG, "onAddStream: ");
             }
 
             @Override
@@ -372,7 +345,24 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
 
             @Override
             public void onDataChannel(DataChannel dataChannel) {
-                Log.d(TAG, "onDataChannel: ");
+                Log.d(TAG, "onDataChannel: is local: "  + " , state: " + dataChannel.state());
+                dataChannel.registerObserver(new DataChannel.Observer() {
+                    @Override
+                    public void onBufferedAmountChange(long l) {
+
+                    }
+
+                    @Override
+                    public void onStateChange() {
+                        Log.d(TAG, "onStateChange: remote data channel state: " + dataChannel.state().toString());
+                    }
+
+                    @Override
+                    public void onMessage(DataChannel.Buffer buffer) {
+                        Log.d(TAG, "onMessage: got message");
+                        readIncomingMessage(buffer.data);
+                    }
+                });
             }
 
             @Override
@@ -384,116 +374,56 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
         return factory.createPeerConnection(rtcConfig, pcConstraints, pcObserver);
     }
 
-    private void initializePeerConnectionFactory() {
-        PeerConnectionFactory.initializeAndroidGlobals(CallActivity.this, true, true, true);
-        factory = new PeerConnectionFactory(null);
-        factory.setVideoHwAccelerationOptions(rootEglBase.getEglBaseContext(), rootEglBase.getEglBaseContext());
+    public void sendMessage() {
+        String message = editText.getText().toString();
+        if (message.isEmpty()) {
+            return;
+        }
+
+        editText.setText("");
+        myLastTextView.setText(message);
+
+        ByteBuffer data = stringToByteBuffer("-s" + message, Charset.defaultCharset());
+        localDataChannel.send(new DataChannel.Buffer(data, false));
     }
 
-    private void createVideoTrackFromCameraAndShowIt() {
-        VideoCapturer videoCapturer = createVideoCapturer();
-        VideoSource videoSource = factory.createVideoSource(videoCapturer);
-        videoCapturer.startCapture(VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_HEIGHT, FPS);
-
-        videoTrackFromCamera = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
-        videoTrackFromCamera.setEnabled(true);
-        videoTrackFromCamera.addRenderer(new VideoRenderer(surfaceView));
-        //audio traces
-        AudioSource audioSource = factory.createAudioSource(new MediaConstraints());
-        audioTrack = factory.createAudioTrack(AUDIO_TRACK_ID,audioSource);
-    }
-
-    private void initializeSurfaceViews() {
-        rootEglBase = EglBase.create();
-        surfaceView = findViewById(R.id.surface_view);
-        surfaceView2 = findViewById(R.id.surface_view2);
-        surfaceView.init(rootEglBase.getEglBaseContext(), null);
-        surfaceView.setEnableHardwareScaler(true);
-        surfaceView.setMirror(true);
-
-        surfaceView2.init(rootEglBase.getEglBaseContext(), null);
-        surfaceView2.setEnableHardwareScaler(true);
-        surfaceView2.setMirror(true);
-    }
-
-    private VideoCapturer createVideoCapturer() {
-        VideoCapturer videoCapturer;
-        if (useCamera2()) {
-            videoCapturer = createCameraCapturer(new Camera2Enumerator(this));
+    private void readIncomingMessage(ByteBuffer buffer) {
+        byte[] bytes;
+        if (buffer.hasArray()) {
+            bytes = buffer.array();
         } else {
-            videoCapturer = createCameraCapturer(new Camera1Enumerator(true));
+            bytes = new byte[buffer.remaining()];
+            buffer.get(bytes);
         }
-        return videoCapturer;
-    }
+        //if (!receivingFile) {
+            String firstMessage = new String(bytes, Charset.defaultCharset());
+            String type = firstMessage.substring(0, 2);
 
-    private VideoCapturer createCameraCapturer(CameraEnumerator enumerator) {
-        final String[] deviceNames = enumerator.getDeviceNames();
-
-        for (String deviceName : deviceNames) {
-            if (enumerator.isFrontFacing(deviceName)) {
-                VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
-
-                if (videoCapturer != null) {
-                    return videoCapturer;
-                }
+            if (type.equals("-i")) {
+//                incomingFileSize = Integer.parseInt(firstMessage.substring(2, firstMessage.length()));
+//                imageFileBytes = new byte[incomingFileSize];
+//                Log.d(TAG, "readIncomingMessage: incoming file size " + incomingFileSize);
+//                receivingFile = true;
+            } else if (type.equals("-s")) {
+                runOnUiThread(() -> remoteLastextView.setText(firstMessage.substring(2, firstMessage.length())));
             }
         }
+//        else {
+//            for (byte b : bytes) {
+//                imageFileBytes[currentIndexPointer++] = b;
+//            }
+//            if (currentIndexPointer == incomingFileSize) {
+//                Log.d(TAG, "readIncomingMessage: received all bytes");
+//                Bitmap bmp = BitmapFactory.decodeByteArray(imageFileBytes, 0, imageFileBytes.length);
+//                receivingFile = false;
+//                currentIndexPointer = 0;
+//                runOnUiThread(() -> binding.image.setImageBitmap(bmp));
+//            }
+//        }
+    //}
 
-        for (String deviceName : deviceNames) {
-            if (!enumerator.isFrontFacing(deviceName)) {
-                VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
-
-                if (videoCapturer != null) {
-                    return videoCapturer;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private boolean useCamera2() {
-        return Camera2Enumerator.isSupported(this);
-    }
-
-    //service related work
-    private ServiceConnection connection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            // Set the service messenger and connected status
-            // cast the IBinder and get MyService instance
-            LinkifyIntentService.LocalBinder binder = (LinkifyIntentService.LocalBinder) service;
-
-            mService = binder.getService();
-            mService.setCallbacks(CallActivity.this); // register
-
-            if (!queueMsg.isEmpty())
-                for (String s : queueMsg) {
-                        mService.sendMessageTOService(s);
-                }
-                queueMsg.clear();
-
-
-
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            Log.v(TAG, "Service disconnected: " + name);
-
-            // Reset the service messenger and connection status
-            CallActivity.this.mService = null;
-            CallActivity.this.connected = false;
-        }
-    };
-
-    @Override
-    public void getMessageFromService(JSONObject message) {
-        try {
-            peerConnection.addIceCandidate(new IceCandidate(message.getString("id"), message.getInt("label"), message.getString("candidate")));
-        } catch (JSONException e) {
-            Log.d(TAG, "getMessageFromService: " + e.getMessage());
-        }
+    private static ByteBuffer stringToByteBuffer(String msg, Charset charset) {
+        return ByteBuffer.wrap(msg.getBytes(charset));
     }
 
     private void doBindService() {
@@ -518,13 +448,48 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
             Log.d(TAG, "doUnbindService: Unbinding.");
         }
     }
+    private ServiceConnection connection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            // Set the service messenger and connected status
+            // cast the IBinder and get MyService instance
+            LinkifyIntentService.LocalBinder binder = (LinkifyIntentService.LocalBinder) service;
+
+            mService = binder.getService();
+            mService.setCallbacks(DataChannelActivity.this); // register
+
+            if (!queueMsg.isEmpty())
+                for (String s : queueMsg) {
+                    mService.sendMessageTOService(s);
+                }
+            queueMsg.clear();
 
 
+
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            Log.v(TAG, "Service disconnected: " + name);
+
+            // Reset the service messenger and connection status
+            DataChannelActivity.this.mService = null;
+        }
+    };
+
+    @Override
+    public void getMessageFromService(JSONObject message) {
+        try {
+            localPeerConnection.addIceCandidate(new IceCandidate(message.getString("id"), message.getInt("label"), message.getString("candidate")));
+        } catch (JSONException e) {
+            Log.d(TAG, "getMessageFromService: " + e.getMessage());
+        }
+    }
     @Override
     protected void onDestroy() {
 
-        if (!executor.getNetworkExecutor().isShutdown()) {
-            executor.getNetworkExecutor().shutdownNow();
+        if (!appExecutor.getNetworkExecutor().isShutdown()) {
+            appExecutor.getNetworkExecutor().shutdownNow();
         }
         try {
             mSocket.close();
@@ -536,6 +501,4 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
         //PreferenceManager.getDefaultSharedPreferences(this).edit().putBoolean("isActive", false).apply();
         super.onDestroy();
     }
-
-
 }

@@ -31,7 +31,9 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 import pk.edu.uaf.linkify.CallActivity;
+import pk.edu.uaf.linkify.DataChannelActivity;
 import pk.edu.uaf.linkify.Interfaces.ServiceCallBacks;
+import pk.edu.uaf.linkify.Utils.AppConstant;
 
 import static pk.edu.uaf.linkify.BroadCastReceivers.App.CHANNEL_ID;
 
@@ -112,23 +114,20 @@ public class LinkifyIntentService extends IntentService {
 
         try {
             client = mServerSocket.accept();
-            AppExecutor.getInstance().getSingleThreadExecutor().execute(new Runnable() {
-                @Override
-                public void run() {
-                    DataOutputStream objectOutputStream;
-                    try {
-                        objectOutputStream = new DataOutputStream(new BufferedOutputStream(client.getOutputStream()));
-                        while (!Thread.currentThread().isInterrupted()){
-                            String msg = candidateQue.take();
-                            Log.d("ffffffff", "Sending from service:"+msg);
-                            objectOutputStream.writeUTF(msg);
-                            objectOutputStream.flush();
-                        }
-                    }catch (Exception e){
-                        Log.d(TAG, "run: "+e.getMessage());
+            AppExecutor.getInstance().getSingleThreadExecutor().execute(() -> {
+                DataOutputStream objectOutputStream;
+                try {
+                    objectOutputStream = new DataOutputStream(new BufferedOutputStream(client.getOutputStream()));
+                    while (!Thread.currentThread().isInterrupted()){
+                        String msg = candidateQue.take();
+                        Log.d("ffffffff", "Sending from service:"+msg);
+                        objectOutputStream.writeUTF(msg);
+                        objectOutputStream.flush();
                     }
-
+                }catch (Exception e){
+                    Log.d(TAG, "run: "+e.getMessage());
                 }
+
             });
             Log.d(TAG, "client connected: " + client.toString());
 //            if (objectOutputStream!= null) {
@@ -138,14 +137,15 @@ public class LinkifyIntentService extends IntentService {
             DataInputStream in = new DataInputStream(new
                     BufferedInputStream(client.getInputStream()));
             while (true) {
-                String obj = (String) in.readUTF();
+                String obj =  in.readUTF();
+                int opt = in.readInt();
                 Log.d("ffffffff", " Receding from service: " + obj);
                 if (obj == null) break;
 
                     JSONObject json = new JSONObject(obj);
                     if (json.getString("type").equals("offer")) {
                         Log.d(TAG, "onHandleIntent: offer Received");
-                        startActivityForCall(obj);
+                        startActivityForCall(obj,opt);
                     } else if (json.getString("type").equals("candidate")) {
                         Log.d(TAG, "onHandleIntent: candidate Received");
                         //send candidate
@@ -167,9 +167,14 @@ public class LinkifyIntentService extends IntentService {
 
     }
 
-    private void startActivityForCall(String s) {
-        Log.d("CallActivity", "run: " + s);
-        Intent dialogIntent = new Intent(getBaseContext(), CallActivity.class);
+    private void startActivityForCall(String s,int opt) {
+        Log.d(TAG, "startActivityForCall: s%"+opt);
+        Intent dialogIntent;
+        if (opt == AppConstant.OFFER_CASE_CALL) {
+            dialogIntent = new Intent(getBaseContext(), CallActivity.class);
+        }else
+            dialogIntent = new Intent(getBaseContext(), DataChannelActivity.class);
+
         dialogIntent.putExtra("json", s);
         dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         getApplication().startActivity(dialogIntent);
@@ -205,7 +210,7 @@ public class LinkifyIntentService extends IntentService {
 
     public void registerService(int port) {
         NsdServiceInfo serviceInfo = new NsdServiceInfo();
-        serviceInfo.setServiceName("Nadeem Chat");
+        serviceInfo.setServiceName("Umair");
         serviceInfo.setServiceType("_http._tcp.");
         serviceInfo.setPort(port);
 
