@@ -1,6 +1,8 @@
 package pk.edu.uaf.linkify;
 
 import android.content.Intent;
+
+import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
@@ -8,6 +10,9 @@ import android.view.View;
 import android.widget.Button;
 
 import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyIntentService;
+import pk.edu.uaf.linkify.Utils.UtilsFunctions;
+
+import static pk.edu.uaf.linkify.Utils.AppConstant.MY_PERMISSIONS_REQUEST_READ_CONTACTS;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -18,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        UtilsFunctions.requestPermissions(MainActivity.this);
         Button createService = findViewById(R.id.button);
         Button stopService = findViewById(R.id.stopService);
         stopService.setOnClickListener(new View.OnClickListener() {
@@ -51,4 +56,11 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == MY_PERMISSIONS_REQUEST_READ_CONTACTS ){
+            //permission result
+        }
+    }
 }

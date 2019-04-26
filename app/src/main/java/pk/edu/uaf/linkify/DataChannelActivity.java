@@ -1,5 +1,6 @@
 package pk.edu.uaf.linkify;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -7,20 +8,29 @@ import pk.edu.uaf.linkify.Interfaces.ServiceCallBacks;
 import pk.edu.uaf.linkify.ServicesAndThreads.AppExecutor;
 import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyIntentService;
 import pk.edu.uaf.linkify.Utils.AppConstant;
+import pk.edu.uaf.linkify.Utils.UtilsFunctions;
 
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.net.nsd.NsdServiceInfo;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.provider.MediaStore;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import org.json.JSONException;
@@ -37,6 +47,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -51,6 +62,7 @@ import java.util.concurrent.Future;
 
 import static org.webrtc.SessionDescription.Type.ANSWER;
 import static org.webrtc.SessionDescription.Type.OFFER;
+import static pk.edu.uaf.linkify.Utils.AppConstant.GALLERY_REQUEST_CODE;
 
 public class DataChannelActivity extends AppCompatActivity implements ServiceCallBacks {
     private static final String TAG = "SampleDataChannelAct";
@@ -62,6 +74,12 @@ public class DataChannelActivity extends AppCompatActivity implements ServiceCal
     private BlockingQueue<String> queue = new ArrayBlockingQueue<>(10);
     private LinkifyIntentService mService = null;
     AppExecutor appExecutor;
+
+    int incomingFileSize;
+    int currentIndexPointer;
+    byte[] imageFileBytes;
+    boolean receivingFile;
+
     /**
      * Flag indicating whether we have called bind on the service.
      */
@@ -75,6 +93,10 @@ public class DataChannelActivity extends AppCompatActivity implements ServiceCal
     @BindView(R.id.message)EditText editText;
     @BindView(R.id.txtmymessage)TextView myLastTextView;
     @BindView(R.id.txtremotemsg)TextView remoteLastextView;
+    @BindView(R.id.myImageView)
+    ImageView myImageView;
+    @BindView(R.id.remoteImageView)
+    ImageView remoteImageView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -395,32 +417,31 @@ public class DataChannelActivity extends AppCompatActivity implements ServiceCal
             bytes = new byte[buffer.remaining()];
             buffer.get(bytes);
         }
-        //if (!receivingFile) {
+        if (!receivingFile) {
             String firstMessage = new String(bytes, Charset.defaultCharset());
             String type = firstMessage.substring(0, 2);
 
             if (type.equals("-i")) {
-//                incomingFileSize = Integer.parseInt(firstMessage.substring(2, firstMessage.length()));
-//                imageFileBytes = new byte[incomingFileSize];
-//                Log.d(TAG, "readIncomingMessage: incoming file size " + incomingFileSize);
-//                receivingFile = true;
+                incomingFileSize = Integer.parseInt(firstMessage.substring(2, firstMessage.length()));
+                imageFileBytes = new byte[incomingFileSize];
+                Log.d(TAG, "readIncomingMessage: incoming file size " + incomingFileSize);
+                receivingFile = true;
             } else if (type.equals("-s")) {
                 runOnUiThread(() -> remoteLastextView.setText(firstMessage.substring(2, firstMessage.length())));
             }
+        } else {
+            for (byte b : bytes) {
+                imageFileBytes[currentIndexPointer++] = b;
+            }
+            if (currentIndexPointer == incomingFileSize) {
+                Log.d(TAG, "readIncomingMessage: received all bytes");
+                Bitmap bmp = BitmapFactory.decodeByteArray(imageFileBytes, 0, imageFileBytes.length);
+                receivingFile = false;
+                currentIndexPointer = 0;
+                runOnUiThread(() -> remoteImageView.setImageBitmap(bmp));
+            }
         }
-//        else {
-//            for (byte b : bytes) {
-//                imageFileBytes[currentIndexPointer++] = b;
-//            }
-//            if (currentIndexPointer == incomingFileSize) {
-//                Log.d(TAG, "readIncomingMessage: received all bytes");
-//                Bitmap bmp = BitmapFactory.decodeByteArray(imageFileBytes, 0, imageFileBytes.length);
-//                receivingFile = false;
-//                currentIndexPointer = 0;
-//                runOnUiThread(() -> binding.image.setImageBitmap(bmp));
-//            }
-//        }
-    //}
+    }
 
     private static ByteBuffer stringToByteBuffer(String msg, Charset charset) {
         return ByteBuffer.wrap(msg.getBytes(charset));
@@ -500,5 +521,78 @@ public class DataChannelActivity extends AppCompatActivity implements ServiceCal
         doUnbindService();
         //PreferenceManager.getDefaultSharedPreferences(this).edit().putBoolean("isActive", false).apply();
         super.onDestroy();
+    }
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = new MenuInflater(this);
+        inflater.inflate(R.menu.data_channel_menu,menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.sendImsge:
+                pickFromGallery();
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+    private void pickFromGallery(){
+        //Create an Intent with action as ACTION_PICK
+        Intent intent=new Intent(Intent.ACTION_PICK);
+        // Sets the type as image/*. This ensures only components of type image are selected
+        intent.setType("image/*");
+        //We pass an extra array with the accepted mime types. This will ensure only components with these MIME types as targeted.
+        String[] mimeTypes = {"image/jpeg", "image/png"};
+        intent.putExtra(Intent.EXTRA_MIME_TYPES,mimeTypes);
+        // Launching the Intent
+        startActivityForResult(intent,GALLERY_REQUEST_CODE);
+    }
+
+    public void onActivityResult(int requestCode,int resultCode,Intent data){
+        // Result code is RESULT_OK only if the user selects an Image
+        if (resultCode == Activity.RESULT_OK)
+            switch (requestCode){
+                case GALLERY_REQUEST_CODE:
+                    //data.getData returns the content URI for the selected Image
+                    Uri selectedImage = data.getData();
+                    String[] filePathColumn = { MediaStore.Images.Media.DATA };
+
+                    Cursor cursor = getContentResolver().query(selectedImage,
+                            filePathColumn, null, null, null);
+                    cursor.moveToFirst();
+
+                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                    String picturePath = cursor.getString(columnIndex);
+                    cursor.close();
+                    File file = new File(picturePath);
+                    int size = (int) file.length();
+                    Log.d("vhdvjvxcvcxnvxc", "onActivityResult: "+size +" picturePath: "+picturePath);
+                    byte[] bytes = UtilsFunctions.readPickedFileAsBytes(file, size);
+                    sendImage(size, bytes);
+                    myImageView.setImageURI(selectedImage);
+                    break;
+            }
+    }
+
+
+    private void sendImage(int size, byte[] bytes) {
+        int numberOfChunks = size / CHUNK_SIZE;
+
+        ByteBuffer meta = stringToByteBuffer("-i" + size, Charset.defaultCharset());
+        localDataChannel.send(new DataChannel.Buffer(meta, false));
+
+        for (int i = 0; i < numberOfChunks; i++) {
+            ByteBuffer wrap = ByteBuffer.wrap(bytes, i * CHUNK_SIZE, CHUNK_SIZE);
+            localDataChannel.send(new DataChannel.Buffer(wrap, false));
+        }
+        int remainder = size % CHUNK_SIZE;
+        if (remainder > 0) {
+            ByteBuffer wrap = ByteBuffer.wrap(bytes, numberOfChunks * CHUNK_SIZE, remainder);
+            localDataChannel.send(new DataChannel.Buffer(wrap, false));
+        }
     }
 }
