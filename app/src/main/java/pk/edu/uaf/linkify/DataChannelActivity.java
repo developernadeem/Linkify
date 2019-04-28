@@ -1,15 +1,5 @@
 package pk.edu.uaf.linkify;
 
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import pk.edu.uaf.linkify.Interfaces.ServiceCallBacks;
-import pk.edu.uaf.linkify.ServicesAndThreads.AppExecutor;
-import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyIntentService;
-import pk.edu.uaf.linkify.Utils.AppConstant;
-import pk.edu.uaf.linkify.Utils.UtilsFunctions;
-
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
@@ -27,7 +17,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -59,6 +48,15 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+
+import androidx.appcompat.app.AppCompatActivity;
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import pk.edu.uaf.linkify.Interfaces.ServiceCallBacks;
+import pk.edu.uaf.linkify.ServicesAndThreads.AppExecutor;
+import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyIntentService;
+import pk.edu.uaf.linkify.Utils.AppConstant;
+import pk.edu.uaf.linkify.Utils.UtilsFunctions;
 
 import static org.webrtc.SessionDescription.Type.ANSWER;
 import static org.webrtc.SessionDescription.Type.OFFER;

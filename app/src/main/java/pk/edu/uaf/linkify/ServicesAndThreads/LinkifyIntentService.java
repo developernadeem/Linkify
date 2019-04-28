@@ -11,8 +11,10 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
+
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+
 import android.util.Log;
 import android.widget.Toast;
 
@@ -118,14 +120,14 @@ public class LinkifyIntentService extends IntentService {
                 DataOutputStream objectOutputStream;
                 try {
                     objectOutputStream = new DataOutputStream(new BufferedOutputStream(client.getOutputStream()));
-                    while (!Thread.currentThread().isInterrupted()){
+                    while (!Thread.currentThread().isInterrupted()) {
                         String msg = candidateQue.take();
-                        Log.d("ffffffff", "Sending from service:"+msg);
+                        Log.d("ffffffff", "Sending from service:" + msg);
                         objectOutputStream.writeUTF(msg);
                         objectOutputStream.flush();
                     }
-                }catch (Exception e){
-                    Log.d(TAG, "run: "+e.getMessage());
+                } catch (Exception e) {
+                    Log.d(TAG, "run: " + e.getMessage());
                 }
 
             });
@@ -137,42 +139,42 @@ public class LinkifyIntentService extends IntentService {
             DataInputStream in = new DataInputStream(new
                     BufferedInputStream(client.getInputStream()));
             while (true) {
-                String obj =  in.readUTF();
+                String obj = in.readUTF();
                 int opt = in.readInt();
                 Log.d("ffffffff", " Receding from service: " + obj);
                 if (obj == null) break;
 
-                    JSONObject json = new JSONObject(obj);
-                    if (json.getString("type").equals("offer")) {
-                        Log.d(TAG, "onHandleIntent: offer Received");
-                        startActivityForCall(obj,opt);
-                    } else if (json.getString("type").equals("candidate")) {
-                        Log.d(TAG, "onHandleIntent: candidate Received");
-                        //send candidate
-                        if (serviceCallbacks != null) {
-                            serviceCallbacks.getMessageFromService(json);
-                        } else {
-                            messageQueue.add(json);
-                        }
-
+                JSONObject json = new JSONObject(obj);
+                if (json.getString("type").equals("offer")) {
+                    Log.d(TAG, "onHandleIntent: offer Received");
+                    startActivityForCall(obj, opt);
+                } else if (json.getString("type").equals("candidate")) {
+                    Log.d(TAG, "onHandleIntent: candidate Received");
+                    //send candidate
+                    if (serviceCallbacks != null) {
+                        serviceCallbacks.getMessageFromService(json);
+                    } else {
+                        messageQueue.add(json);
                     }
+
+                }
 
             }
             in.close();
         } catch (IOException e) {
             e.printStackTrace();
-        }catch (Exception ignored){
+        } catch (Exception ignored) {
 
         }
 
     }
 
-    private void startActivityForCall(String s,int opt) {
-        Log.d(TAG, "startActivityForCall: s%"+opt);
+    private void startActivityForCall(String s, int opt) {
+        Log.d(TAG, "startActivityForCall: s%" + opt);
         Intent dialogIntent;
         if (opt == AppConstant.OFFER_CASE_CALL) {
             dialogIntent = new Intent(getBaseContext(), CallActivity.class);
-        }else
+        } else
             dialogIntent = new Intent(getBaseContext(), DataChannelActivity.class);
 
         dialogIntent.putExtra("json", s);
@@ -186,8 +188,7 @@ public class LinkifyIntentService extends IntentService {
         Log.d(TAG, "onDestroy");
         wakeLock.release();
         try {
-        mNsdManager.unregisterService(mRegistrationListener);
-
+            mNsdManager.unregisterService(mRegistrationListener);
             if (client != null) client.close();
             mServerSocket.close();
         } catch (Exception e) {
@@ -271,8 +272,8 @@ public class LinkifyIntentService extends IntentService {
 
     }
 
-    public  void sendMessageTOService(String message) {
-        Log.d(TAG, "sendMessageTOService: "+message);
+    public void sendMessageTOService(String message) {
+        Log.d(TAG, "sendMessageTOService: " + message);
         try {
             candidateQue.put(message);
         } catch (InterruptedException e) {
