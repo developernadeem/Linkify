@@ -1,4 +1,4 @@
-package com.sumbal.linkify.Modal;
+package pk.edu.uaf.linkify.Modal;
 
 public class User {
 

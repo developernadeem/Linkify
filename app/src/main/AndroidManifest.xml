@@ -30,8 +30,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".DataChannelActivity"></activity>
-        <activity android:name=".LoginActivity"></activity>
+        <activity android:name=".DataChannelActivity"/>
+        <activity android:name=".LoginActivity"/>
 
         <receiver android:name=".BroadCastReceivers.BootCompletedIntentReceiver">
             <intent-filter>
@@ -40,18 +40,24 @@
         </receiver>
 
         <activity android:name=".MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
         <activity android:name=".DiscoverService" />
 
         <service android:name=".ServicesAndThreads.LinkifyIntentService" />
 
         <activity android:name=".CallActivity" />
-        //provider
+        <activity android:name=".MainActivity2"
+            android:theme="@style/NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".ChatActivity"/>
+        <activity android:name=".SignUpActivity"/>
+        <!--provider-->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

@@ -13,7 +13,7 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
 
-import pk.edu.uaf.linkify.Adapters.MyServicesRecyclerAdapter;
+import pk.edu.uaf.linkify.Adapter.MyServicesRecyclerAdapter;
 
 public class DiscoverService extends AppCompatActivity implements MyServicesRecyclerAdapter.ClickListener {
     private static final String TAG = "DiscoverService";

@@ -18,14 +18,14 @@ android {
 
 
 ext {
-    supportVersion = '27.1.1'
+    supportVersion = '1.0.0-beta01'
     flexboxVersion = '1.0.0'
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation "com.android.support:appcompat-v7:$supportVersion"
-    implementation "com.android.support:design:$supportVersion"
+    implementation "androidx.appcompat:appcompat:$supportVersion"
+    implementation "com.google.android.material:material:$supportVersion"
     implementation "com.google.android:flexbox:$flexboxVersion"
 }

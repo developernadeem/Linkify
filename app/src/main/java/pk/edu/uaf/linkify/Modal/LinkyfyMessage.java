@@ -1,4 +1,4 @@
-package com.sumbal.linkify.Modal;
+package pk.edu.uaf.linkify.Modal;
 
 import com.stfalcon.chatkit.commons.models.IMessage;
 import com.stfalcon.chatkit.commons.models.IUser;

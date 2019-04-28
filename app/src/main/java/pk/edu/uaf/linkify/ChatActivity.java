@@ -1,17 +1,19 @@
-package com.sumbal.linkify;
+package pk.edu.uaf.linkify;
 
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.ImageView;
 
+
 import com.stfalcon.chatkit.commons.ImageLoader;
+import com.stfalcon.chatkit.messages.MessagesList;
 import com.stfalcon.chatkit.messages.MessagesListAdapter;
-import com.sumbal.linkify.Modal.LinkifyUser;
-import com.sumbal.linkify.Modal.LinkyfyMessage;
 
 import java.util.Date;
-import java.util.List;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import pk.edu.uaf.linkify.Modal.LinkifyUser;
+import pk.edu.uaf.linkify.Modal.LinkyfyMessage;
 
 public class ChatActivity extends AppCompatActivity {
     com.stfalcon.chatkit.messages.MessagesList list;
@@ -19,7 +21,8 @@ public class ChatActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
-        list = findViewById(R.id.messagesList);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        list =  findViewById(R.id.messagesList);
 
         LinkifyUser sumbal  = new LinkifyUser("1","Sumbal","SN");
         LinkifyUser nakasha = new LinkifyUser("2","Nakasha","NA");
