@@ -11,6 +11,7 @@ import android.os.IBinder;
 import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.view.WindowManager;
 
 import org.json.JSONException;
@@ -20,6 +21,7 @@ import org.webrtc.AudioTrack;
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
+import org.webrtc.CameraVideoCapturer;
 import org.webrtc.DataChannel;
 import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
@@ -42,22 +44,26 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import pk.edu.uaf.linkify.Interfaces.OnCallEvent;
 import pk.edu.uaf.linkify.Interfaces.ServiceCallBacks;
 import pk.edu.uaf.linkify.ServicesAndThreads.AppExecutor;
 import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyIntentService;
 import pk.edu.uaf.linkify.Utils.AppConstant;
+import pk.edu.uaf.linkify.Utils.AppRTCAudioManager;
 import pub.devrel.easypermissions.EasyPermissions;
 
 import static org.webrtc.SessionDescription.Type.ANSWER;
 import static org.webrtc.SessionDescription.Type.OFFER;
 
-public class CallActivity extends AppCompatActivity implements ServiceCallBacks {
+public class CallActivity extends AppCompatActivity implements ServiceCallBacks
+, OnCallEvent {
 
 
     private static final String TAG = "gfiyfyfyfyfyfyfyfy";
@@ -92,6 +98,7 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
     private boolean connected = false;
 
     private PeerConnection peerConnection;
+    private VideoCapturer videoCapturer;
     private EglBase rootEglBase;
     private PeerConnectionFactory factory;
     private VideoTrack videoTrackFromCamera;
@@ -99,15 +106,25 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
     private Socket mSocket;
     private NsdServiceInfo mInfo;
     private AppExecutor executor;
+    private AppRTCAudioManager audioManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_call);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        // Set window styles for fullscreen-window size. Needs to be done before
+        // adding content.
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().addFlags(
+                WindowManager.LayoutParams.FLAG_FULLSCREEN
+                        | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                        | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                        | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                        | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         doBindService();
         String[] perms = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO};
         if (!EasyPermissions.hasPermissions(this, perms)) {
@@ -131,17 +148,14 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
         if (intent.hasExtra("info")) {
             mInfo = intent.getParcelableExtra("info");
             isInitiator = true;
-            Future<Boolean> wait = executor.getNetworkExecutor().submit(new Callable<Boolean>() {
-                @Override
-                public Boolean call()  {
-                    try {
-                        mSocket = new Socket(mInfo.getHost(),mInfo.getPort());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        return false;
-                    }
-                    return true;
+            Future<Boolean> wait = executor.getNetworkExecutor().submit(() -> {
+                try {
+                    mSocket = new Socket(mInfo.getHost(),mInfo.getPort());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return false;
                 }
+                return true;
             });
             try {
                 wait.get();
@@ -240,6 +254,7 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
 
     private void doCall() {
         MediaConstraints sdpMediaConstraints = new MediaConstraints();
+
 
         peerConnection.createOffer(new SimpleSdpObserver() {
             @Override
@@ -391,7 +406,7 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
     }
 
     private void createVideoTrackFromCameraAndShowIt() {
-        VideoCapturer videoCapturer = createVideoCapturer();
+         videoCapturer = createVideoCapturer();
         VideoSource videoSource = factory.createVideoSource(videoCapturer);
         videoCapturer.startCapture(VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_HEIGHT, FPS);
 
@@ -401,11 +416,25 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
         //audio traces
         AudioSource audioSource = factory.createAudioSource(new MediaConstraints());
         audioTrack = factory.createAudioTrack(AUDIO_TRACK_ID,audioSource);
+        // Create and audio manager that will take care of audio routing,
+        // audio modes, audio device enumeration etc.
+        audioManager = AppRTCAudioManager.create(this, new Runnable() {
+                    // This method will be called each time the audio state (number and
+                    // type of devices) has been changed.
+                    @Override
+                    public void run() {
+                        onAudioManagerChangedState();
+                    }
+                }
+        );
+        audioManager.setAudioDevice(AppRTCAudioManager.AudioDevice.SPEAKER_PHONE);
     }
 
     private void initializeSurfaceViews() {
+
         rootEglBase = EglBase.create();
         surfaceView = findViewById(R.id.surface_view);
+        surfaceView.setZOrderMediaOverlay(true);
         surfaceView2 = findViewById(R.id.surface_view2);
         surfaceView.init(rootEglBase.getEglBaseContext(), null);
         surfaceView.setEnableHardwareScaler(true);
@@ -414,6 +443,13 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
         surfaceView2.init(rootEglBase.getEglBaseContext(), null);
         surfaceView2.setEnableHardwareScaler(true);
         surfaceView2.setMirror(true);
+
+        findViewById(R.id.hang_call).setOnClickListener(v -> {
+            onCallHangUp();
+        });
+        findViewById(R.id.switch_camera).setOnClickListener(v -> {
+            onCameraSwitch();
+        });
     }
 
     private VideoCapturer createVideoCapturer() {
@@ -538,4 +574,48 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks 
     }
 
 
+    @Override
+    public void onCallHangUp() {
+        disconnect();
+    }
+
+    @Override
+    public void onCameraSwitch() {
+        if (peerConnection != null) {
+            CameraVideoCapturer cameraVideoCapturer = (CameraVideoCapturer) videoCapturer;
+            cameraVideoCapturer.switchCamera(null);
+        }
+    }
+
+    @Override
+    public void onSpeakerChange() {
+
+    }
+
+    @Override
+    public boolean onToggleMic() {
+        return false;
+    }
+    private void disconnect() {
+        if (!executor.getNetworkExecutor().isShutdown()) {
+            executor.getNetworkExecutor().shutdownNow();
+
+        }
+        if (peerConnection != null) {
+            peerConnection.close();
+            peerConnection = null;
+        }
+        if (audioManager != null) {
+            audioManager.close();
+            audioManager = null;
+        }
+        surfaceView.release();
+        surfaceView2.release();
+
+        finish();
+    }
+    private void onAudioManagerChangedState() {
+        // TODO(): disable video if AppRTCAudioManager.AudioDevice.EARPIECE
+        // is active.
+    }
 }
