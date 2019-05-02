@@ -11,8 +11,8 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -30,8 +30,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".DataChannelActivity"/>
-        <activity android:name=".LoginActivity"/>
+        <activity android:name=".Messaging"></activity>
+        <activity android:name=".DataChannelActivity" />
+        <activity android:name=".LoginActivity" />
 
         <receiver android:name=".BroadCastReceivers.BootCompletedIntentReceiver">
             <intent-filter>
@@ -40,24 +41,22 @@
         </receiver>
 
         <activity android:name=".MainActivity">
-
-        </activity>
-        <activity android:name=".DiscoverService" />
-
-        <service android:name=".ServicesAndThreads.LinkifyIntentService" />
-
-        <activity android:name=".CallActivity" />
-        <activity android:name=".MainActivity2"
-            android:theme="@style/NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ChatActivity"/>
-        <activity android:name=".SignUpActivity"/>
-        <!--provider-->
+        <activity android:name=".DiscoverService" />
+
+        <service android:name=".ServicesAndThreads.LinkifyIntentService" />
+
+        <activity android:name=".CallActivity" />
+        <activity
+            android:name=".MainActivity2"
+            android:theme="@style/NoActionBar"></activity>
+        <activity android:name=".ChatActivity" />
+        <activity android:name=".SignUpActivity" /> <!-- provider -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
@@ -65,10 +64,8 @@
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/files_path">
-            </meta-data>
+                android:resource="@xml/files_path"></meta-data>
         </provider>
-
     </application>
 
 </manifest>

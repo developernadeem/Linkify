@@ -52,6 +52,7 @@ import java.util.concurrent.Future;
 import androidx.appcompat.app.AppCompatActivity;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import pk.edu.uaf.linkify.ChatDB.ChatDataBase;
 import pk.edu.uaf.linkify.Interfaces.ServiceCallBacks;
 import pk.edu.uaf.linkify.ServicesAndThreads.AppExecutor;
 import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyIntentService;
@@ -83,6 +84,8 @@ public class DataChannelActivity extends AppCompatActivity implements ServiceCal
      */
     boolean mIsBound;
 
+    private ChatDataBase mDb;
+
     private PeerConnectionFactory factory;
     private PeerConnection localPeerConnection, remotePeerConnection;
     private DataChannel localDataChannel;
@@ -102,6 +105,9 @@ public class DataChannelActivity extends AppCompatActivity implements ServiceCal
         ButterKnife.bind(this);
         btnSend.setOnClickListener(v -> sendMessage());
         Intent intent = getIntent();
+
+        mDb = ChatDataBase.getInstance(getApplicationContext());
+
 
         doBindService();
         appExecutor = AppExecutor.getInstance();

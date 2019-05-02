@@ -48,4 +48,12 @@ dependencies {
     //Round Images
     implementation 'de.hdodenhof:circleimageview:3.0.0'
     implementation project(':chatkit')
+
+
+    def room_version = "2.1.0-alpha07"
+
+    implementation "androidx.room:room-runtime:$room_version"
+    annotationProcessor "androidx.room:room-compiler:$room_version"
+
+
 }

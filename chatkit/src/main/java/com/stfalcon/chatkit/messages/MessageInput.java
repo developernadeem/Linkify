@@ -39,7 +39,7 @@ import java.lang.reflect.Field;
  * Component for input outcoming messages
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
-public class MessageInput extends RelativeLayout
+public class  MessageInput extends RelativeLayout
         implements View.OnClickListener, TextWatcher, View.OnFocusChangeListener {
 
     protected EditText messageInput;

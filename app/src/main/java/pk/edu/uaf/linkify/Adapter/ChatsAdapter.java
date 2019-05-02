@@ -14,18 +14,21 @@ import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 import pk.edu.uaf.linkify.ChatActivity;
+import pk.edu.uaf.linkify.ChatDB.Messages;
 import pk.edu.uaf.linkify.Modal.User;
 import pk.edu.uaf.linkify.R;
 
 public class ChatsAdapter extends RecyclerView.Adapter<ChatsAdapter.Holder> {
 
-    Context context;
-    List<User> list;
+    private Context context;
+    private List<User> userslist;
+    private List<Messages> messages;
+
 
 
     public ChatsAdapter(Context context, List<User> list) {
         this.context = context;
-        this.list = list;
+        this.userslist = list;
     }
 
     @NonNull
@@ -41,7 +44,7 @@ public class ChatsAdapter extends RecyclerView.Adapter<ChatsAdapter.Holder> {
     @Override
     public void onBindViewHolder(@NonNull ChatsAdapter.Holder holder, int i) {
 
-        User user = list.get(i);
+        User user = userslist.get(i);
         holder.img1.setImageDrawable(context.getResources().getDrawable(user.getUserImg()));
         holder.name.setText(user.getName());
         holder.text.setText(user.getText());
@@ -62,7 +65,7 @@ public class ChatsAdapter extends RecyclerView.Adapter<ChatsAdapter.Holder> {
     @Override
     public int getItemCount() {
 
-        return list.size();
+        return userslist.size();
     }
 
     public class Holder extends RecyclerView.ViewHolder {

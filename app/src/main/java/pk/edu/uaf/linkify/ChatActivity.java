@@ -12,17 +12,25 @@ import java.util.Date;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import pk.edu.uaf.linkify.ChatDB.ChatDataBase;
 import pk.edu.uaf.linkify.Modal.LinkifyUser;
 import pk.edu.uaf.linkify.Modal.LinkyfyMessage;
 
 public class ChatActivity extends AppCompatActivity {
     com.stfalcon.chatkit.messages.MessagesList list;
+
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         list =  findViewById(R.id.messagesList);
+
+
+
 
         LinkifyUser sumbal  = new LinkifyUser("1","Sumbal","SN");
         LinkifyUser nakasha = new LinkifyUser("2","Nakasha","NA");
