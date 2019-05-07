@@ -2,4 +2,5 @@
     <string name="app_name">Linkify</string>
     <string name="appbar_scrolling">android.support.design.widget.AppBarLayout$ScrollingViewBehavior</string>
     <string name="send_image">Send Image</string>
+    <string name="pick_image_intent_text">Pick Image</string>
 </resources>

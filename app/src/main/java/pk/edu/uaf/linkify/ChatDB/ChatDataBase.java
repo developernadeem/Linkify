@@ -6,11 +6,10 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
-import pk.edu.uaf.linkify.Modal.User;
 
 import static pk.edu.uaf.linkify.Utils.AppConstant.DATABASE_NAME;
 
-@Database(entities = {User.class,Messages.class},version = 1,exportSchema = false)
+@Database(entities = {Users.class,Messages.class},version = 1,exportSchema = false)
 @TypeConverters(DateConverter.class)
 public abstract class ChatDataBase extends RoomDatabase {
 

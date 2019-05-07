@@ -7,7 +7,6 @@ import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
-import pk.edu.uaf.linkify.Modal.User;
 
 import static androidx.room.OnConflictStrategy.REPLACE;
 @Dao
@@ -26,12 +25,12 @@ public interface MyDao
     @Delete
     void deleteMessage(Messages message);
     @Insert
-    void insertUser(User user);
+    void insertUser(Users user);
 
     @Update(onConflict = REPLACE)
-    void updateUser(User user);
+    void updateUser(Users user);
 
     @Delete
-    void deleteUser(User user);
+    void deleteUser(Users user);
 
 }
