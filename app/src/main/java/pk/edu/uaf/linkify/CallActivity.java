@@ -12,8 +12,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-
-import androidx.appcompat.app.AppCompatActivity;
+import android.widget.ImageView;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,17 +44,14 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import androidx.appcompat.app.AppCompatActivity;
 import pk.edu.uaf.linkify.Interfaces.OnCallEvent;
 import pk.edu.uaf.linkify.Interfaces.ServiceCallBacks;
-
-
 import pk.edu.uaf.linkify.ServicesAndThreads.AppExecutor;
 import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyIntentService;
 import pk.edu.uaf.linkify.Utils.AppConstant;
@@ -64,6 +60,14 @@ import pub.devrel.easypermissions.EasyPermissions;
 
 import static org.webrtc.SessionDescription.Type.ANSWER;
 import static org.webrtc.SessionDescription.Type.OFFER;
+import static pk.edu.uaf.linkify.Utils.AppConstant.AUDIO_DISABLED;
+import static pk.edu.uaf.linkify.Utils.AppConstant.AUDIO_ENABLED;
+import static pk.edu.uaf.linkify.Utils.AppConstant.AUDIO_TRACK_ID;
+import static pk.edu.uaf.linkify.Utils.AppConstant.FPS;
+import static pk.edu.uaf.linkify.Utils.AppConstant.RC_CALL;
+import static pk.edu.uaf.linkify.Utils.AppConstant.VIDEO_RESOLUTION_HEIGHT;
+import static pk.edu.uaf.linkify.Utils.AppConstant.VIDEO_RESOLUTION_WIDTH;
+import static pk.edu.uaf.linkify.Utils.AppConstant.VIDEO_TRACK_ID;
 
 public class CallActivity extends AppCompatActivity implements ServiceCallBacks
 , OnCallEvent {
@@ -72,13 +76,7 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks
     private static final String TAG = "gfiyfyfyfyfyfyfyfy";
 
 
-    public static final String VIDEO_TRACK_ID = "ARDAMSv0";
-    public static final String AUDIO_TRACK_ID = "ARDAMSa0";
-    public static final int VIDEO_RESOLUTION_WIDTH = 1280;
-    public static final int VIDEO_RESOLUTION_HEIGHT = 720;
-    public static final int FPS = 30;
 
-    private static final int RC_CALL = 111;
     private List<String> queueMsg = new ArrayList<>();
     BlockingQueue<String> queue = new ArrayBlockingQueue<>(10);
 
@@ -114,10 +112,10 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        setContentView(R.layout.activity_call);
         // Set window styles for fullscreen-window size. Needs to be done before
         // adding content.
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().addFlags(
                 WindowManager.LayoutParams.FLAG_FULLSCREEN
                         | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
@@ -129,7 +127,6 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks
                         | View.SYSTEM_UI_FLAG_FULLSCREEN
                         | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         doBindService();
-        setContentView(R.layout.activity_call);
         String[] perms = {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO};
         if (!EasyPermissions.hasPermissions(this, perms)) {
             EasyPermissions.requestPermissions(this, "Need some permissions", RC_CALL, perms);
@@ -454,6 +451,21 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks
         findViewById(R.id.switch_camera).setOnClickListener(v -> {
             onCameraSwitch();
         });
+        ImageView microphone = findViewById(R.id.microphone);
+        microphone.setOnClickListener(v->{
+            switch (microphone.getTag().toString()){
+                case AUDIO_ENABLED:
+                    audioTrack.setEnabled(false);
+                    microphone.setTag(AUDIO_DISABLED);
+                    break;
+                case AUDIO_DISABLED:
+                    audioTrack.setEnabled(true);
+                    microphone.setTag(AUDIO_ENABLED);
+                    break;
+
+            }
+        });
+
     }
 
     private VideoCapturer createVideoCapturer() {
@@ -597,7 +609,9 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks
     }
 
     @Override
-    public boolean onToggleMic() {
+    public boolean onToggleMic()
+    {
+        //TODO: implement mute mic
         return false;
     }
     private void disconnect() {

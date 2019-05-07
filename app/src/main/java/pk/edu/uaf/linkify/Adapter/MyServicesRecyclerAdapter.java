@@ -3,9 +3,6 @@ package pk.edu.uaf.linkify.Adapter;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.net.nsd.NsdServiceInfo;
-import androidx.annotation.NonNull;
-import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +10,9 @@ import android.widget.TextView;
 
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.recyclerview.widget.RecyclerView;
 import pk.edu.uaf.linkify.R;
 
 public class MyServicesRecyclerAdapter extends RecyclerView.Adapter<MyServicesRecyclerAdapter.MyViewHolder> {
@@ -39,8 +39,10 @@ public class MyServicesRecyclerAdapter extends RecyclerView.Adapter<MyServicesRe
     @Override
     public void onBindViewHolder(@NonNull MyViewHolder myViewHolder, int i) {
         final NsdServiceInfo info = myServices.get(i);
-        myViewHolder.port.setText(String.valueOf(info.getPort()));
-        myViewHolder.ipAddress.setText(info.getServiceName());
+        String name = info.getServiceName();
+        String[] nameParts =name.split("/");
+        myViewHolder.ipAddress.setText(nameParts[0]);
+        myViewHolder.port.setText(nameParts[1]);
         myViewHolder.container.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

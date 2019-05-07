@@ -10,11 +10,6 @@ import android.net.nsd.NsdServiceInfo;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
-import android.os.PowerManager;
-
-import androidx.annotation.Nullable;
-import androidx.core.app.NotificationCompat;
-
 import android.util.Log;
 import android.widget.Toast;
 
@@ -32,19 +27,25 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
 import pk.edu.uaf.linkify.CallActivity;
 import pk.edu.uaf.linkify.DataChannelActivity;
 import pk.edu.uaf.linkify.Interfaces.ServiceCallBacks;
 import pk.edu.uaf.linkify.Utils.AppConstant;
+import pk.edu.uaf.linkify.Utils.PrefUtils;
 
 import static pk.edu.uaf.linkify.BroadCastReceivers.App.CHANNEL_ID;
+import static pk.edu.uaf.linkify.Utils.AppConstant.NOTIFICATION_ID;
+import static pk.edu.uaf.linkify.Utils.AppConstant.USER_NAME;
+import static pk.edu.uaf.linkify.Utils.AppConstant.USER_NUMBER;
 
 public class LinkifyIntentService extends IntentService {
-    private static final String TAG = "dfjijijofowepoewfjewop";
+    private static final String TAG = "LinkifyIntentService";
     /**
      * ID used for notifications
      */
-    public static final int ID = 11;
+
 
     /**
      * Server Socket for all incoming connections
@@ -56,9 +57,6 @@ public class LinkifyIntentService extends IntentService {
      */
     private NsdManager mNsdManager;
     private NsdManager.RegistrationListener mRegistrationListener;
-
-    private PowerManager.WakeLock wakeLock;
-
 
     // Binder given to clients
     private final IBinder binder = new LocalBinder();
@@ -88,13 +86,6 @@ public class LinkifyIntentService extends IntentService {
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "onCreate");
-
-        PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
-                "ExampleApp:Wakelock");
-        wakeLock.acquire();
-        Log.d(TAG, "Wakelock acquired");
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                     .setContentTitle("Linkify Background Service")
@@ -102,7 +93,7 @@ public class LinkifyIntentService extends IntentService {
                     .setSmallIcon(android.R.drawable.ic_dialog_email)
                     .build();
 
-            startForeground(ID, notification);
+            startForeground(NOTIFICATION_ID, notification);
         }
 
 
@@ -185,8 +176,7 @@ public class LinkifyIntentService extends IntentService {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "onDestroy");
-        wakeLock.release();
+        Log.d(TAG, "onDestroy");;
         try {
             mNsdManager.unregisterService(mRegistrationListener);
             if (client != null) client.close();
@@ -210,8 +200,13 @@ public class LinkifyIntentService extends IntentService {
     }
 
     public void registerService(int port) {
+        ;
+        String name = PrefUtils.getStringPref(this,USER_NAME)
+                +"/"+PrefUtils.getStringPref(this,USER_NUMBER)
+                +"/"+ Build.SERIAL;
+
         NsdServiceInfo serviceInfo = new NsdServiceInfo();
-        serviceInfo.setServiceName("Umair");
+        serviceInfo.setServiceName(name);
         serviceInfo.setServiceType("_http._tcp.");
         serviceInfo.setPort(port);
 
