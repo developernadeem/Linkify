@@ -1,7 +1,11 @@
 package pk.edu.uaf.linkify.Modal;
 
-public class User {
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
 
+@Entity
+public class User {
+    @PrimaryKey
     private int userImg;
     private String name;
     private String text;

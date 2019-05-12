@@ -3,4 +3,8 @@
     <string name="appbar_scrolling">android.support.design.widget.AppBarLayout$ScrollingViewBehavior</string>
     <string name="send_image">Send Image</string>
     <string name="pick_image_intent_text">Pick Image</string>
+    <string name="enable_service">Enable Service</string>
+    <string name="signup">SignUp</string>
+    <string name="connect_through_wi_fi">Connect through Wi_Fi</string>
+    <string name="connect_through_hotspot">Connect through Hotspot</string>
 </resources>

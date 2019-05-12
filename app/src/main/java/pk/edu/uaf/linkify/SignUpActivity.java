@@ -1,48 +1,44 @@
 package pk.edu.uaf.linkify;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.MotionEvent;
-import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.textfield.TextInputEditText;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
-import androidx.core.content.FileProvider;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import de.hdodenhof.circleimageview.CircleImageView;
 import pk.edu.uaf.linkify.Utils.PrefUtils;
 import pk.edu.uaf.linkify.Utils.UtilsFunctions;
 
+import static pk.edu.uaf.linkify.Utils.AppConstant.PICK_IMAGE_GALLERY;
+import static pk.edu.uaf.linkify.Utils.AppConstant.REQUEST_CAMERA;
+import static pk.edu.uaf.linkify.Utils.AppConstant.SIGNED_UP_STATUS;
+import static pk.edu.uaf.linkify.Utils.AppConstant.USER_IMAGE_PATH;
 import static pk.edu.uaf.linkify.Utils.AppConstant.USER_NAME;
 import static pk.edu.uaf.linkify.Utils.AppConstant.USER_NUMBER;
 
@@ -59,10 +55,8 @@ public class SignUpActivity extends AppCompatActivity {
     @BindView(R.id.imagePerson)
     CircleImageView circleImageViewDP;
 
-    private Bitmap bitmap;
-    private String imgPath = null,imgPathCam = null;
-    private final int  PICK_IMAGE_GALLERY = 2;
-    public static final int REQUEST_CAMERA = 1002;
+    private String imgPathCam = null;
+
     Context context;
 
     @SuppressLint("ClickableViewAccessibility")
@@ -75,7 +69,7 @@ public class SignUpActivity extends AppCompatActivity {
         setContentView(R.layout.login_layout);
         ButterKnife.bind(this);
 
-        btnSignIn.setVisibility(View.GONE);
+        btnSignIn.setEnabled(false);
 
         UtilsFunctions.requestPermissions(SignUpActivity.this);
 
@@ -116,11 +110,11 @@ public class SignUpActivity extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (editNumber.getText().toString().length() == 11 ) {
-                    btnSignIn.setVisibility(View.VISIBLE);
+                    btnSignIn.setEnabled(true);
 
                 }
                 else {
-                    btnSignIn.setVisibility(View.GONE);
+                    btnSignIn.setEnabled(false);
                 }
             }
 
@@ -145,9 +139,9 @@ public class SignUpActivity extends AppCompatActivity {
 
             PrefUtils.setStringPref(this, USER_NAME, name);
             PrefUtils.setStringPref(this, USER_NUMBER, number);
+            PrefUtils.setBooleanPref(this, SIGNED_UP_STATUS,true);
 
-            Intent intent = new Intent(this,MainActivity.class);
-            startActivity(intent);
+            setResult(RESULT_OK);
             finish();
 
         });
@@ -158,28 +152,23 @@ public class SignUpActivity extends AppCompatActivity {
     private void selectImage() {
 //        try {
             UtilsFunctions.requestPermissions(SignUpActivity.this);
-            final CharSequence[] options = {"Take Photo", "Choose From Gallery"};
+            final CharSequence[] options = {"Camera", "Gallery"};
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("Select Option");
             builder.setItems(options, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int item) {
-                    if (options[item].equals("Take Photo")) {
+                    if (options[item].equals("Camera")) {
                         dialog.dismiss();
                         dispatchTakePictureIntent();
-                    } else if (options[item].equals("Choose From Gallery")) {
+                    } else if (options[item].equals("Gallery")) {
                         dialog.dismiss();
                         Intent pickPhoto = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
                         startActivityForResult(pickPhoto, PICK_IMAGE_GALLERY);
                     }
                 }
             });
-            builder.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                }
-            });
+            builder.setNegativeButton("cancel", (dialog, which) -> dialog.dismiss());
             builder.show();
 //        } catch (Exception e) {
 //            Toast.makeText(this, "Camera Permission error", Toast.LENGTH_SHORT).show();
@@ -198,24 +187,22 @@ public class SignUpActivity extends AppCompatActivity {
             Glide.with(getApplicationContext())
                     .load(imgPathCam)
                     .into(circleImageViewDP);
-
-
-
-
+            PrefUtils.setStringPref(this,USER_IMAGE_PATH,imgPathCam);
         }
         else if (requestCode == PICK_IMAGE_GALLERY  && data != null ) {
             Uri selectedImage = data.getData();
             try {
-                bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImage);
+                Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImage);
                 ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 50, bytes);
                 Log.e("Activity", "Pick from Gallery::>>> ");
 
-                imgPath = getRealPathFromURI(selectedImage);
+                String imgPath = getRealPathFromURI(selectedImage);
 
 
 
                 Glide.with(this).load(imgPath).into(circleImageViewDP);
+                PrefUtils.setStringPref(this,USER_IMAGE_PATH,imgPath);
 
 
             } catch (Exception e) {
@@ -262,6 +249,7 @@ public class SignUpActivity extends AppCompatActivity {
     // Create an image file name
     String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
     String imageFileName = "JPEG_" + timeStamp + "_";
+    File dir = new File(getFilesDir(),"");
     File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
     File image = File.createTempFile(
             imageFileName,  /* prefix */

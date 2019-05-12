@@ -16,46 +16,54 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginRight="8dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="24dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.23000002">
+        app:layout_constraintVertical_bias="0.13999999">
 
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/imagePerson"
-            android:layout_width="232dp"
-            android:layout_height="224dp"
-            android:src="@drawable/ic_boy"
-            app:civ_border_color="@color/borderColor"
-            app:civ_border_width="1dp" />
+            android:layout_width="160dp"
+            android:layout_height="160dp"
+            android:src="@drawable/ic_user" />
 
-        <ImageView
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/cam_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_gravity="bottom|right"
+            android:layout_margin="8dp"
+            android:src="@drawable/camera"
             android:tint="@color/white"
-            android:layout_margin="16dp"
-
-            android:src="@drawable/camera" />
+            app:fabSize="mini" />
     </FrameLayout>
 
 
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginBottom="16dp"
         app:cardCornerRadius="8dp"
         app:cardElevation="8dp"
         app:cardUseCompatPadding="true"
-        app:layout_constraintTop_toBottomOf="@+id/frameLayout">
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/frameLayout"
+        app:layout_constraintVertical_bias="0.0">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="16dp"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:padding="16dp">
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/textInputLayout2"
@@ -69,9 +77,9 @@
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/edit_name"
-                    android:inputType="textCapWords"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:inputType="textCapWords" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -93,8 +101,9 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/sign_btn"
+                style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="200dp"
                 android:layout_height="45dp"
                 android:layout_gravity="center"
@@ -104,13 +113,8 @@
                 android:layout_marginEnd="8dp"
                 android:layout_marginRight="8dp"
                 android:layout_marginBottom="8dp"
-                android:background="@drawable/btn_background"
-                android:shadowColor="#A8A8A8"
-                android:shadowDx="0"
-                android:shadowDy="0"
                 android:shadowRadius="5"
-                android:text="SignUp"
-                android:textColor="#FFFFFF" />
+                android:text="@string/signup" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 </androidx.constraintlayout.widget.ConstraintLayout>

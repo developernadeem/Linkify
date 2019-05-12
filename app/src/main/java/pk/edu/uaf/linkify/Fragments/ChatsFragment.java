@@ -5,14 +5,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import pk.edu.uaf.linkify.Adapter.ChatsAdapter;
 import pk.edu.uaf.linkify.Modal.User;
@@ -36,7 +34,7 @@ public class ChatsFragment extends Fragment {
         list = new ArrayList<>();
         recyclerView = view.findViewById(R.id.recyclerView_chats_id);
 
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        /*recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         User u = new User(R.drawable.item,"Sumbal","That's good");
         User u1 = new User(R.drawable.item,"Nakasha","this design looks nice");
@@ -52,7 +50,7 @@ public class ChatsFragment extends Fragment {
 
         adapter= new ChatsAdapter(getContext(),list);
         recyclerView.setAdapter(adapter);
-
+*/
 
         return view;
 

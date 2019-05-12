@@ -46,7 +46,7 @@ public class CallsAdapter extends RecyclerView.Adapter<CallsAdapter.CallsViewHol
        // View view;
         public CallsViewHolder(@NonNull View itemView) {
             super(itemView);
-            imgIcon = itemView.findViewById(R.id.item);
+            imgIcon = itemView.findViewById(R.id.user_dp);
             arrow = itemView.findViewById(R.id.incoming_calls);
             call = itemView.findViewById(R.id.call);
             textTitle = itemView.findViewById(R.id.name);
