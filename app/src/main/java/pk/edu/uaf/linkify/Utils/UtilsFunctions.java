@@ -2,7 +2,9 @@ package pk.edu.uaf.linkify.Utils;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 
 import java.io.BufferedInputStream;
@@ -32,6 +34,10 @@ public final class UtilsFunctions {
             // Should we show an explanation?
             if (ActivityCompat.shouldShowRequestPermissionRationale(activity,
                     Manifest.permission.READ_CONTACTS)) {
+
+                showMessageOKCancel("You need to allow access to Camera",activity);
+                return false;
+
                 // Show an explanation to the user *asynchronously* -- don't block
                 // this thread waiting for the user's response! After the user
                 // sees the explanation, try again to request the permission.
@@ -67,4 +73,23 @@ public final class UtilsFunctions {
         }
         return bytes;
     }
+    private static void showMessageOKCancel(String message, Activity activity) {
+        new AlertDialog.Builder(activity)
+                .setMessage(message)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        requestPermissions(activity);
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                })
+                .create()
+                .show();
+    }
+
 }

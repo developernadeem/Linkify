@@ -6,7 +6,10 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -22,10 +25,17 @@ import com.google.android.material.textfield.TextInputEditText;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
@@ -34,6 +44,7 @@ import butterknife.ButterKnife;
 import de.hdodenhof.circleimageview.CircleImageView;
 import pk.edu.uaf.linkify.Utils.PrefUtils;
 import pk.edu.uaf.linkify.Utils.UtilsFunctions;
+import pub.devrel.easypermissions.EasyPermissions;
 
 import static pk.edu.uaf.linkify.Utils.AppConstant.PICK_IMAGE_GALLERY;
 import static pk.edu.uaf.linkify.Utils.AppConstant.REQUEST_CAMERA;
@@ -42,7 +53,7 @@ import static pk.edu.uaf.linkify.Utils.AppConstant.USER_IMAGE_PATH;
 import static pk.edu.uaf.linkify.Utils.AppConstant.USER_NAME;
 import static pk.edu.uaf.linkify.Utils.AppConstant.USER_NUMBER;
 
-public class SignUpActivity extends AppCompatActivity {
+public class SignUpActivity extends AppCompatActivity  {
 
     @BindView(R.id.sign_btn)
     Button btnSignIn;
@@ -56,9 +67,10 @@ public class SignUpActivity extends AppCompatActivity {
     CircleImageView circleImageViewDP;
 
     private String imgPathCam = null;
-
+    private static boolean B;
     Context context;
-
+    private static final String IMAGE_DIRECTORY = "/Linkify/.Images";
+    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -128,7 +140,13 @@ public class SignUpActivity extends AppCompatActivity {
 
         dpImage.setOnClickListener(v -> {
 
-            selectImage();
+
+         if (UtilsFunctions.requestPermissions(this))
+         {
+             selectImage();
+         }
+
+
 
         });
 
@@ -151,8 +169,7 @@ public class SignUpActivity extends AppCompatActivity {
     // Select image from camera and gallery
     private void selectImage() {
 //        try {
-            UtilsFunctions.requestPermissions(SignUpActivity.this);
-            final CharSequence[] options = {"Camera", "Gallery"};
+           final CharSequence[] options = {"Camera", "Gallery"};
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("Select Option");
             builder.setItems(options, new DialogInterface.OnClickListener() {
@@ -184,10 +201,26 @@ public class SignUpActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CAMERA ) {
 
 
+
+
             Glide.with(getApplicationContext())
                     .load(imgPathCam)
+                    .placeholder(getResources()
+                    .getDrawable(R.drawable.ic_boy))
                     .into(circleImageViewDP);
+
+
+            Bitmap bitmap=   BitmapFactory.decodeFile(imgPathCam);
+
+            ByteArrayOutputStream imgBytes = new ByteArrayOutputStream();
+            if (bitmap!=null){
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, imgBytes);
+
+            imgPathCam = saveImage(imgBytes);
+
             PrefUtils.setStringPref(this,USER_IMAGE_PATH,imgPathCam);
+
+            }
         }
         else if (requestCode == PICK_IMAGE_GALLERY  && data != null ) {
             Uri selectedImage = data.getData();
@@ -199,9 +232,15 @@ public class SignUpActivity extends AppCompatActivity {
 
                 String imgPath = getRealPathFromURI(selectedImage);
 
+                ByteArrayOutputStream imgBytes = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, imgBytes);
 
+                imgPath = saveImage(imgBytes);
 
                 Glide.with(this).load(imgPath).into(circleImageViewDP);
+
+
+
                 PrefUtils.setStringPref(this,USER_IMAGE_PATH,imgPath);
 
 
@@ -221,6 +260,7 @@ public class SignUpActivity extends AppCompatActivity {
 
 
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private void dispatchTakePictureIntent() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         // Ensure that there's a camera activity to handle the intent
@@ -229,6 +269,9 @@ public class SignUpActivity extends AppCompatActivity {
             File photoFile = null;
             try {
                 photoFile = createImageFile();
+
+
+
             } catch (IOException ex) {
                 Toast.makeText(context, "Error occurred while creating the File", Toast.LENGTH_SHORT).show();
             }
@@ -247,7 +290,7 @@ public class SignUpActivity extends AppCompatActivity {
 
     private File createImageFile() throws IOException {
     // Create an image file name
-    String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+
     String imageFileName = "JPEG_" + timeStamp + "_";
     File dir = new File(getFilesDir(),"");
     File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
@@ -259,7 +302,35 @@ public class SignUpActivity extends AppCompatActivity {
 
     // Save a file: path for use with ACTION_VIEW intents
     imgPathCam = image.getAbsolutePath();
+
+
     return image;
 }
+
+    public String saveImage(ByteArrayOutputStream bytes) {
+
+        File linkifyPictureStorageDirectory = new File(
+                Environment.getExternalStorageDirectory() + IMAGE_DIRECTORY);
+        // have the object build the directory structure, if needed.
+        if (!linkifyPictureStorageDirectory.exists()) {
+            linkifyPictureStorageDirectory.mkdirs();
+        }
+        try {
+            File imageFile = new File(linkifyPictureStorageDirectory, timeStamp + ".jpg");
+            imageFile.createNewFile();
+            FileOutputStream fo = new FileOutputStream(imageFile);
+            fo.write(bytes.toByteArray());
+            MediaScannerConnection.scanFile(this,
+                    new String[]{imageFile.getPath()},
+                    new String[]{"image/jpeg"}, null);
+            fo.close();
+            Log.d("TAG", "File Saved::--->" + imageFile.getAbsolutePath());
+
+            return imageFile.getAbsolutePath();
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        }
+        return "";
+    }
 
 }
