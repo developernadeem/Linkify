@@ -1,80 +1,68 @@
 package pk.edu.uaf.linkify.Adapter;
 
-import android.app.AlertDialog;
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.net.nsd.NsdServiceInfo;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import java.util.List;
-
 import androidx.annotation.NonNull;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.List;
+import java.util.Random;
+
+import pk.edu.uaf.linkify.Modal.LinkifyUser;
 import pk.edu.uaf.linkify.R;
+
+import static pk.edu.uaf.linkify.Utils.UtilsFunctions.getName;
+import static pk.edu.uaf.linkify.Utils.UtilsFunctions.getSurname;
 
 public class MyServicesRecyclerAdapter extends RecyclerView.Adapter<MyServicesRecyclerAdapter.MyViewHolder> {
 
-    List<NsdServiceInfo> myServices;
-    private  ClickListener mListener;
+    private List<NsdServiceInfo> myServices;
+    private ClickListener mListener;
     private Context mContext;
-    public interface ClickListener{
-        void ItemClickListener(NsdServiceInfo info,int which);
+
+    public interface ClickListener {
+        void ItemClickListener(NsdServiceInfo info, LinkifyUser user);
     }
 
-    public MyServicesRecyclerAdapter(List<NsdServiceInfo> myServices , Context context) {
+    public MyServicesRecyclerAdapter(List<NsdServiceInfo> myServices, Context context) {
         mContext = context;
-        mListener = (ClickListener)context;
+        mListener = (ClickListener) context;
         this.myServices = myServices;
     }
 
     @NonNull
     @Override
     public MyViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-        return new MyViewHolder(LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.adapter_found_services,viewGroup,false));
+        return new MyViewHolder(LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.adapter_found_services, viewGroup, false));
     }
 
     @Override
     public void onBindViewHolder(@NonNull MyViewHolder myViewHolder, int i) {
         final NsdServiceInfo info = myServices.get(i);
         String name = info.getServiceName();
-        String[] nameParts =name.split("/");
-        myViewHolder.ipAddress.setText(nameParts[0]);
-        myViewHolder.port.setText(nameParts[1]);
-        myViewHolder.container.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String[] items = {"Call","Message"};
-                new AlertDialog.Builder(mContext)
-                        .setTitle("Please Pic Option")
-                        .setItems(R.array.options, (dialog, which) -> {
-                            mListener.ItemClickListener(info,which);
-                        }).show();
+        String[] nameParts = name.split("/");
+        GradientDrawable magnitudeCircle = (GradientDrawable) myViewHolder.circle.getBackground();
+        Random rnd = new Random();
+        int color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
 
-                /*Thread msg = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try{
-                            Socket mSocket = new Socket(info.getHost(),info.getPort());
-                            PrintWriter out = new PrintWriter(new BufferedWriter(
-                                    new OutputStreamWriter(mSocket.getOutputStream())),
-                                    true);
-                            out.println("You Got A message from Nadeem. Happy Coding!");
-                            out.close();
-                            mSocket.close();
-                        }catch (IOException e){
-                            e.printStackTrace();
-                        }
-                    }
-                });
-                msg.start();*/
-            }
+        magnitudeCircle.setColor(color);
+        String builder = getName(nameParts[0]).substring(0, 1) +
+                getSurname(nameParts[0]).substring(0, 1);
+        myViewHolder.circle.setText(builder);
+        myViewHolder.userName.setText(nameParts[0]);
+        myViewHolder.userNumber.setText(nameParts[1]);
+        myViewHolder.container.setOnClickListener(v -> {
+            LinkifyUser user = new LinkifyUser(nameParts[2],nameParts[0],builder,nameParts[1]);
+            mListener.ItemClickListener(info, user);
         });
-//        int port = serviceInfo.getPort();
-//        InetAddress host = serviceInfo.getHost();
-
     }
 
     @Override
@@ -82,16 +70,18 @@ public class MyServicesRecyclerAdapter extends RecyclerView.Adapter<MyServicesRe
         return myServices.size();
     }
 
-    public class MyViewHolder extends RecyclerView.ViewHolder{
+    class MyViewHolder extends RecyclerView.ViewHolder {
 
-        TextView ipAddress;
-        TextView port;
-        ConstraintLayout container;
+        TextView userName;
+        TextView userNumber;
+        TextView circle;
+        LinearLayout container;
 
-        public MyViewHolder(@NonNull View itemView) {
+        MyViewHolder(@NonNull View itemView) {
             super(itemView);
-            ipAddress = itemView.findViewById(R.id.ip_address);
-            port = itemView.findViewById(R.id.port_number);
+            userName = itemView.findViewById(R.id.userName);
+            userNumber = itemView.findViewById(R.id.userNumber);
+            circle = itemView.findViewById(R.id.circleTextView);
             container = itemView.findViewById(R.id.container);
         }
     }

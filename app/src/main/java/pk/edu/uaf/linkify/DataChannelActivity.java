@@ -22,6 +22,8 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
@@ -45,15 +47,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import androidx.appcompat.app.AppCompatActivity;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import pk.edu.uaf.linkify.ChatDB.ChatDataBase;
-import pk.edu.uaf.linkify.Interfaces.ServiceCallBacks;
 import pk.edu.uaf.linkify.ServicesAndThreads.AppExecutor;
 import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyIntentService;
 import pk.edu.uaf.linkify.Utils.AppConstant;
@@ -63,7 +62,7 @@ import static org.webrtc.SessionDescription.Type.ANSWER;
 import static org.webrtc.SessionDescription.Type.OFFER;
 import static pk.edu.uaf.linkify.Utils.AppConstant.GALLERY_REQUEST_CODE;
 
-public class DataChannelActivity extends AppCompatActivity implements ServiceCallBacks {
+public class DataChannelActivity extends AppCompatActivity  {
     private static final String TAG = "SampleDataChannelAct";
     public static final int CHUNK_SIZE = 64000;
     private boolean isInitiator = false;
@@ -87,7 +86,7 @@ public class DataChannelActivity extends AppCompatActivity implements ServiceCal
     private ChatDataBase mDb;
 
     private PeerConnectionFactory factory;
-    private PeerConnection localPeerConnection, remotePeerConnection;
+    private PeerConnection localPeerConnection;
     private DataChannel localDataChannel;
 
     @BindView(R.id.send)Button btnSend;
@@ -118,17 +117,14 @@ public class DataChannelActivity extends AppCompatActivity implements ServiceCal
         if (intent.hasExtra("info")) {
             mInfo = intent.getParcelableExtra("info");
             isInitiator = true;
-            Future<Boolean> wait = appExecutor.getNetworkExecutor().submit(new Callable<Boolean>() {
-                @Override
-                public Boolean call()  {
-                    try {
-                        mSocket = new Socket(mInfo.getHost(),mInfo.getPort());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        return false;
-                    }
-                    return true;
+            Future<Boolean> wait = appExecutor.getNetworkExecutor().submit(() -> {
+                try {
+                    mSocket = new Socket(mInfo.getHost(),mInfo.getPort());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return false;
                 }
+                return true;
             });
             try {
                 wait.get();
@@ -481,7 +477,7 @@ public class DataChannelActivity extends AppCompatActivity implements ServiceCal
             LinkifyIntentService.LocalBinder binder = (LinkifyIntentService.LocalBinder) service;
 
             mService = binder.getService();
-            mService.setCallbacks(DataChannelActivity.this); // register
+            //mService.setCallbacks(DataChannelActivity.this); // register
 
             if (!queueMsg.isEmpty())
                 for (String s : queueMsg) {
@@ -502,14 +498,20 @@ public class DataChannelActivity extends AppCompatActivity implements ServiceCal
         }
     };
 
-    @Override
-    public void getMessageFromService(JSONObject message) {
-        try {
-            localPeerConnection.addIceCandidate(new IceCandidate(message.getString("id"), message.getInt("label"), message.getString("candidate")));
-        } catch (JSONException e) {
-            Log.d(TAG, "getMessageFromService: " + e.getMessage());
-        }
-    }
+//    @Override
+//    public void getMessageFromService(JSONObject message) {
+//        try {
+//            localPeerConnection.addIceCandidate(new IceCandidate(message.getString("id"), message.getInt("label"), message.getString("candidate")));
+//        } catch (JSONException e) {
+//            Log.d(TAG, "getMessageFromService: " + e.getMessage());
+//        }
+//    }
+//
+//    @Override
+//    public void getUserMessage(String msg) {
+//
+//    }
+
     @Override
     protected void onDestroy() {
 

@@ -18,16 +18,16 @@ package com.stfalcon.chatkit.dialogs;
 
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
-import androidx.annotation.LayoutRes;
-import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import androidx.annotation.LayoutRes;
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.stfalcon.chatkit.R;
 import com.stfalcon.chatkit.commons.ImageLoader;
@@ -331,9 +331,9 @@ public class DialogsListAdapter<DIALOG extends IDialog>
         Collections.sort(items, new Comparator<DIALOG>() {
             @Override
             public int compare(DIALOG o1, DIALOG o2) {
-                if (o1.getLastMessage().getCreatedAt().after(o2.getLastMessage().getCreatedAt())) {
+                if (o1.getLastMessage().getDate().after(o2.getLastMessage().getDate())) {
                     return -1;
-                } else if (o1.getLastMessage().getCreatedAt().before(o2.getLastMessage().getCreatedAt())) {
+                } else if (o1.getLastMessage().getDate().before(o2.getLastMessage().getDate())) {
                     return 1;
                 } else return 0;
             }
@@ -647,7 +647,7 @@ public class DialogsListAdapter<DIALOG extends IDialog>
             String formattedDate = null;
 
             if (dialog.getLastMessage() != null) {
-                Date lastMessageDate = dialog.getLastMessage().getCreatedAt();
+                Date lastMessageDate = dialog.getLastMessage().getDate();
                 if (datesFormatter != null) formattedDate = datesFormatter.format(lastMessageDate);
                 tvDate.setText(formattedDate == null
                         ? getDateString(lastMessageDate)
@@ -663,7 +663,7 @@ public class DialogsListAdapter<DIALOG extends IDialog>
 
             //Set Last message user avatar with check if there is last message
             if (imageLoader != null && dialog.getLastMessage() != null) {
-                imageLoader.loadImage(ivLastMessageUser, dialog.getLastMessage().getUser().getAvatar(), null);
+                //imageLoader.loadImage(ivLastMessageUser, dialog.getLastMessage().getUserId().getAvatar(), null);
             }
             ivLastMessageUser.setVisibility(dialogStyle.isDialogMessageAvatarEnabled()
                     && dialog.getUsers().size() > 1

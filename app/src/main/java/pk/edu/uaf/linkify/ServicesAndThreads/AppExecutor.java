@@ -8,7 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class AppExecutor  {
-    private Executor singleThreadExecutor;
+    private ExecutorService singleThreadExecutor;
     private Executor mainThread;
     private static AppExecutor appExecutor;
     private ExecutorService networkExecutor;
@@ -25,7 +25,7 @@ public class AppExecutor  {
 
     }
 
-    public Executor getSingleThreadExecutor() {
+    public ExecutorService getSingleThreadExecutor() {
         return singleThreadExecutor;
     }
     public ExecutorService getNetworkExecutor(){  return networkExecutor; }

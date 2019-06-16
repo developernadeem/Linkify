@@ -13,6 +13,9 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
+
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
@@ -27,8 +30,6 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
-import androidx.annotation.Nullable;
-import androidx.core.app.NotificationCompat;
 import pk.edu.uaf.linkify.CallActivity;
 import pk.edu.uaf.linkify.DataChannelActivity;
 import pk.edu.uaf.linkify.Interfaces.ServiceCallBacks;
@@ -37,8 +38,7 @@ import pk.edu.uaf.linkify.Utils.PrefUtils;
 
 import static pk.edu.uaf.linkify.BroadCastReceivers.App.CHANNEL_ID;
 import static pk.edu.uaf.linkify.Utils.AppConstant.NOTIFICATION_ID;
-import static pk.edu.uaf.linkify.Utils.AppConstant.USER_NAME;
-import static pk.edu.uaf.linkify.Utils.AppConstant.USER_NUMBER;
+import static pk.edu.uaf.linkify.Utils.AppConstant.USER_SERVICE_NAME;
 
 public class LinkifyIntentService extends IntentService {
     private static final String TAG = "LinkifyIntentService";
@@ -201,9 +201,8 @@ public class LinkifyIntentService extends IntentService {
 
     public void registerService(int port) {
         ;
-        String name = PrefUtils.getStringPref(this,USER_NAME)
-                +"/"+PrefUtils.getStringPref(this,USER_NUMBER)
-                +"/"+ Build.SERIAL;
+        String name = PrefUtils.getStringPref(this,USER_SERVICE_NAME);
+
 
         NsdServiceInfo serviceInfo = new NsdServiceInfo();
         serviceInfo.setServiceName(name);

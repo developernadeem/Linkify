@@ -19,9 +19,6 @@ package com.stfalcon.chatkit.messages;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import androidx.annotation.LayoutRes;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.text.Spannable;
 import android.text.method.LinkMovementMethod;
 import android.util.SparseArray;
@@ -30,6 +27,9 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
+import androidx.annotation.LayoutRes;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.stfalcon.chatkit.R;
 import com.stfalcon.chatkit.commons.ImageLoader;
@@ -150,9 +150,9 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
      * @param scroll  {@code true} if need to scroll list to bottom when message added.
      */
     public void addToStart(MESSAGE message, boolean scroll) {
-        boolean isNewMessageToday = !isPreviousSameDate(0, message.getCreatedAt());
+        boolean isNewMessageToday = !isPreviousSameDate(0, message.getDate());
         if (isNewMessageToday) {
-            items.add(0, new Wrapper<>(message.getCreatedAt()));
+            items.add(0, new Wrapper<>(message.getDate()));
         }
         Wrapper<MESSAGE> element = new Wrapper<>(message);
         items.add(0, element);
@@ -176,7 +176,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         if (!items.isEmpty()) {
             int lastItemPosition = items.size() - 1;
             Date lastItem = (Date) items.get(lastItemPosition).item;
-            if (DateFormatter.isSameDay(messages.get(0).getCreatedAt(), lastItem)) {
+            if (DateFormatter.isSameDay(messages.get(0).getDate(), lastItem)) {
                 items.remove(lastItemPosition);
                 notifyItemRemoved(lastItemPosition);
             }
@@ -193,7 +193,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
      * @param message updated message object.
      */
     public boolean update(MESSAGE message) {
-        return update(message.getId(), message);
+        return update(String.valueOf(message.getId()), message);
     }
 
     /**
@@ -220,7 +220,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
      * @param newMessage new message object.
      */
     public void updateAndMoveToStart(MESSAGE newMessage) {
-        int position = getMessagePositionById(newMessage.getId());
+        int position = getMessagePositionById(String.valueOf(newMessage.getId()));
         if (position >= 0) {
             Wrapper<MESSAGE> element = new Wrapper<>(newMessage);
             items.remove(position);
@@ -249,7 +249,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
      */
     public void upsert(MESSAGE message, boolean moveToStartIfUpdate) {
         if (moveToStartIfUpdate) {
-            if (getMessagePositionById(message.getId()) > 0) {
+            if (getMessagePositionById(String.valueOf(message.getId())) > 0) {
                 updateAndMoveToStart(message);
             } else {
                 upsert(message);
@@ -265,7 +265,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
      * @param message message to delete.
      */
     public void delete(MESSAGE message) {
-        deleteById(message.getId());
+        deleteById(String.valueOf(message.getId()));
     }
 
     /**
@@ -276,7 +276,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
     public void delete(List<MESSAGE> messages) {
         boolean result = false;
         for (MESSAGE message : messages) {
-            int index = getMessagePositionById(message.getId());
+            int index = getMessagePositionById(String.valueOf(message.getId()));
             if (index >= 0) {
                 items.remove(index);
                 notifyItemRemoved(index);
@@ -535,11 +535,11 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
             this.items.add(new Wrapper<>(message));
             if (messages.size() > i + 1) {
                 MESSAGE nextMessage = messages.get(i + 1);
-                if (!DateFormatter.isSameDay(message.getCreatedAt(), nextMessage.getCreatedAt())) {
-                    this.items.add(new Wrapper<>(message.getCreatedAt()));
+                if (!DateFormatter.isSameDay(message.getDate(), nextMessage.getDate())) {
+                    this.items.add(new Wrapper<>(message.getDate()));
                 }
             } else {
-                this.items.add(new Wrapper<>(message.getCreatedAt()));
+                this.items.add(new Wrapper<>(message.getDate()));
             }
         }
     }
@@ -550,7 +550,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
             Wrapper wrapper = items.get(i);
             if (wrapper.item instanceof IMessage) {
                 MESSAGE message = (MESSAGE) wrapper.item;
-                if (message.getId().contentEquals(id)) {
+                if (String.valueOf(message.getId()).contentEquals(id)) {
                     return i;
                 }
             }
@@ -562,7 +562,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
     private boolean isPreviousSameDate(int position, Date dateToCompare) {
         if (items.size() <= position) return false;
         if (items.get(position).item instanceof IMessage) {
-            Date previousPositionDate = ((MESSAGE) items.get(position).item).getCreatedAt();
+            Date previousPositionDate = ((MESSAGE) items.get(position).item).getDate();
             return DateFormatter.isSameDay(dateToCompare, previousPositionDate);
         } else return false;
     }
@@ -572,7 +572,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         int prevPosition = position + 1;
         if (items.size() <= prevPosition) return false;
         else return items.get(prevPosition).item instanceof IMessage
-                && ((MESSAGE) items.get(prevPosition).item).getUser().getId().contentEquals(id);
+                && ((MESSAGE) items.get(prevPosition).item).getUserId().contentEquals(id);
     }
 
     private void incrementSelectedItemsCount() {
@@ -628,7 +628,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
                     else decrementSelectedItemsCount();
 
                     MESSAGE message = (wrapper.item);
-                    notifyItemChanged(getMessagePositionById(message.getId()));
+                    notifyItemChanged(getMessagePositionById(String.valueOf(message.getId())));
                 } else {
                     notifyMessageClicked(wrapper.item);
                     notifyMessageViewClicked(view, wrapper.item);
@@ -801,7 +801,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
     public static class HoldersConfig extends MessageHolders {
 
         /**
-         * This method is deprecated. Use {@link MessageHolders#setIncomingTextConfig(Class, int)} instead.
+         * This method is deprecated. Use {@link MessageHolders#(, int)} instead.
          *
          * @param holder holder class.
          * @param layout layout resource.
@@ -812,7 +812,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         }
 
         /**
-         * This method is deprecated. Use {@link MessageHolders#setIncomingTextHolder(Class)} instead.
+         * This method is deprecated. Use {@link MessageHolders#()} instead.
          *
          * @param holder holder class.
          */
@@ -832,7 +832,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         }
 
         /**
-         * This method is deprecated. Use {@link MessageHolders#setOutcomingTextConfig(Class, int)} instead.
+         * This method is deprecated. Use {@link MessageHolders#(, int)} instead.
          *
          * @param holder holder class.
          * @param layout layout resource.
@@ -843,7 +843,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         }
 
         /**
-         * This method is deprecated. Use {@link MessageHolders#setOutcomingTextHolder(Class)} instead.
+         * This method is deprecated. Use {@link MessageHolders#()} instead.
          *
          * @param holder holder class.
          */
@@ -863,7 +863,7 @@ public class MessagesListAdapter<MESSAGE extends IMessage>
         }
 
         /**
-         * This method is deprecated. Use {@link MessageHolders#setDateHeaderConfig(Class, int)} instead.
+         * This method is deprecated. Use {@link MessageHolders#, int)} instead.
          *
          * @param holder holder class.
          * @param layout layout resource.

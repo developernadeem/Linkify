@@ -1,19 +1,20 @@
 package pk.edu.uaf.linkify;
 
 import android.content.Context;
-import android.content.Intent;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
-import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import pk.edu.uaf.linkify.Adapter.MyServicesRecyclerAdapter;
+import pk.edu.uaf.linkify.Modal.LinkifyUser;
 
 public class DiscoverService extends AppCompatActivity implements MyServicesRecyclerAdapter.ClickListener {
     private static final String TAG = "DiscoverService";
@@ -118,16 +119,9 @@ public class DiscoverService extends AppCompatActivity implements MyServicesRecy
         };
     }
 
+
     @Override
-    public void ItemClickListener(NsdServiceInfo info,int which) {
-        if (which == 0) {
-            Intent call = new Intent(this, CallActivity.class);
-            call.putExtra("info", info);
-            startActivity(call);
-        }else if (which == 1){
-            Intent call = new Intent(this, DataChannelActivity.class);
-            call.putExtra("info", info);
-            startActivity(call);
-        }
+    public void ItemClickListener(NsdServiceInfo info, LinkifyUser user) {
+
     }
 }

@@ -1,34 +1,42 @@
 package pk.edu.uaf.linkify.Adapter;
+
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
-
-
-import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.List;
+import java.util.Random;
+
 import pk.edu.uaf.linkify.ChatActivity;
-import pk.edu.uaf.linkify.ChatDB.Messages;
-import pk.edu.uaf.linkify.Modal.User;
+import pk.edu.uaf.linkify.Modal.CustomResponse;
+import pk.edu.uaf.linkify.Modal.LinkifyChat;
+import pk.edu.uaf.linkify.Modal.LinkifyUser;
 import pk.edu.uaf.linkify.R;
 
 public class ChatsAdapter extends RecyclerView.Adapter<ChatsAdapter.Holder> {
 
     private Context context;
-    private List<User> userslist;
-    private List<Messages> messages;
+    private List<CustomResponse> chatlist;
 
 
-
-    public ChatsAdapter(Context context, List<User> list) {
+    public ChatsAdapter(Context context, List<CustomResponse> list) {
         this.context = context;
-        this.userslist = list;
+        this.chatlist = list;
+    }
+
+    public void updateDataSet(List<CustomResponse> chats) {
+        chatlist = chats;
     }
 
     @NonNull
@@ -36,28 +44,38 @@ public class ChatsAdapter extends RecyclerView.Adapter<ChatsAdapter.Holder> {
     public ChatsAdapter.Holder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
 
         LayoutInflater layoutInflater = LayoutInflater.from(context);
-        View view = layoutInflater.inflate(R.layout.chatsitem,null,false);
-        Holder holder = new Holder(view);
-        return holder;
+        View view = layoutInflater.inflate(R.layout.chatsitem, viewGroup, false);
+        return new Holder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ChatsAdapter.Holder holder, int i) {
 
-        User user = userslist.get(i);
-        holder.img1.setImageDrawable(context.getResources().getDrawable(user.getUserImg()));
+        CustomResponse response = chatlist.get(i);
+        LinkifyUser user = response.getUser();
+        LinkifyChat chat = response.getChat();
+        //holder.img1.setImageDrawable(context.getResources().getDrawable(user.getUserImg()));
         holder.name.setText(user.getName());
-        holder.text.setText(user.getText());
+        holder.lastMessage.setText(chat.getLastMsg());
+        holder.img1.setText(user.getAvatar());
+        String pattern = "MM/yy HH:mm";
 
-        holder.chatsLayout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
+        // Create an instance of SimpleDateFormat used for formatting
+        // the string representation of date according to the chosen pattern
+        DateFormat df = new SimpleDateFormat(pattern);
+        holder.lastModified.setText(df.format(chat.getLastModified()));
+        GradientDrawable magnitudeCircle = (GradientDrawable) holder.img1.getBackground();
+        Random rnd = new Random();
+        int color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
+        magnitudeCircle.setColor(color);
 
-                //Use context or getActivty in fragments
-                Intent intent = new Intent(context, ChatActivity.class);
-                context.startActivity(intent);
+        holder.chatsLayout.setOnClickListener(view -> {
+            //Use context or getActivty in fragments
+            Intent intent = new Intent(context, ChatActivity.class);
+            intent.putExtra("id",chat.getChatId());
+            intent.putExtra("userId",user.getId());
+            context.startActivity(intent);
 
-            }
         });
 
     }
@@ -65,27 +83,28 @@ public class ChatsAdapter extends RecyclerView.Adapter<ChatsAdapter.Holder> {
     @Override
     public int getItemCount() {
 
-        return userslist.size();
+        return chatlist.size();
     }
 
     public class Holder extends RecyclerView.ViewHolder {
 
-        ImageView img1;
-        TextView name,text;
+        TextView img1;
+        TextView name, lastMessage, lastModified;
         ConstraintLayout chatsLayout;
 
         public Holder(@NonNull View itemView) {
             super(itemView);
 
-            img1 = itemView.findViewById(R.id.imageView);
+            img1 = itemView.findViewById(R.id.circleTextView);
             name = itemView.findViewById(R.id.name);
-            text = itemView.findViewById(R.id.text);
-            chatsLayout = (ConstraintLayout) itemView.findViewById(R.id.chatlayout);
+            lastModified = itemView.findViewById(R.id.lastModified);
+
+            lastMessage = itemView.findViewById(R.id.text);
+            chatsLayout = itemView.findViewById(R.id.chatlayout);
 
         }
 
     }
-
 
 
 }

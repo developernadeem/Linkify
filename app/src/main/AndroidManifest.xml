@@ -35,7 +35,7 @@
         <service
             android:name=".ServicesAndThreads.LinkifyService"
             android:enabled="true"
-            android:exported="false"/>
+            android:exported="false" />
 
         <activity android:name=".DataChannelActivity" />
 
@@ -45,7 +45,11 @@
             </intent-filter>
         </receiver>
 
-        <activity android:name=".MainActivity"></activity>
+        <activity
+            android:name=".MainActivity"
+            android:theme="@style/NoActionBar">
+
+        </activity>
 
         <activity android:name=".DiscoverService" />
 
@@ -55,7 +59,7 @@
             android:name=".CallActivity"
             android:theme="@style/NoActionBar" />
         <activity
-            android:name=".MainActivity2"
+            android:name=".HomeActivity.MainActivity2"
             android:theme="@style/NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -66,9 +70,9 @@
         <activity android:name=".ChatActivity" />
         <activity
             android:name=".SignUpActivity"
-            android:theme="@style/NoActionBar"/>
+            android:theme="@style/NoActionBar" />
 
-         <!-- provider -->
+        <!-- provider -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
@@ -76,11 +80,7 @@
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/files_path"/>
-
-
-
-
+                android:resource="@xml/files_path" />
         </provider>
     </application>
 

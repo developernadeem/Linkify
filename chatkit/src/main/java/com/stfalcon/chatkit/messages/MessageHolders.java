@@ -1,8 +1,5 @@
 package com.stfalcon.chatkit.messages;
 
-import androidx.annotation.LayoutRes;
-import androidx.annotation.NonNull;
-import androidx.core.view.ViewCompat;
 import android.text.Spannable;
 import android.text.method.LinkMovementMethod;
 import android.util.SparseArray;
@@ -13,6 +10,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import androidx.annotation.LayoutRes;
+import androidx.annotation.NonNull;
+import androidx.core.view.ViewCompat;
 
 import com.stfalcon.chatkit.R;
 import com.stfalcon.chatkit.commons.ImageLoader;
@@ -602,7 +603,7 @@ public class MessageHolders {
 
         if (item instanceof IMessage) {
             IMessage message = (IMessage) item;
-            isOutcoming = message.getUser().getId().contentEquals(senderId);
+            isOutcoming = senderId.contentEquals(message.getUserId());
             viewType = getContentViewType(message);
 
         } else viewType = VIEW_TYPE_DATE_HEADER;
@@ -1058,18 +1059,18 @@ public class MessageHolders {
         @Override
         public void onBind(MESSAGE message) {
             if (time != null) {
-                time.setText(DateFormatter.format(message.getCreatedAt(), DateFormatter.Template.TIME));
+                time.setText(DateFormatter.format(message.getDate(), DateFormatter.Template.TIME));
             }
 
             if (userAvatar != null) {
-                boolean isAvatarExists = imageLoader != null
-                        && message.getUser().getAvatar() != null
-                        && !message.getUser().getAvatar().isEmpty();
-
-                userAvatar.setVisibility(isAvatarExists ? View.VISIBLE : View.GONE);
-                if (isAvatarExists) {
-                    imageLoader.loadImage(userAvatar, message.getUser().getAvatar(), null);
-                }
+//                boolean isAvatarExists = imageLoader != null
+//                        && message.getUserId().getAvatar() != null
+//                        && !message.getUserId().getAvatar().isEmpty();
+//
+//                userAvatar.setVisibility(isAvatarExists ? View.VISIBLE : View.GONE);
+//                if (isAvatarExists) {
+//                    imageLoader.loadImage(userAvatar, message.getUserId().getAvatar(), null);
+//                }
             }
         }
 
@@ -1116,7 +1117,7 @@ public class MessageHolders {
         @Override
         public void onBind(MESSAGE message) {
             if (time != null) {
-                time.setText(DateFormatter.format(message.getCreatedAt(), DateFormatter.Template.TIME));
+                time.setText(DateFormatter.format(message.getDate(), DateFormatter.Template.TIME));
             }
         }
 

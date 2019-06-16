@@ -2,9 +2,6 @@ package pk.edu.uaf.linkify.ServicesAndThreads;
 
 import android.util.Log;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -13,9 +10,12 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 
+import pk.edu.uaf.linkify.Interfaces.StreamMessages;
+
 public class ClientWorker implements Runnable {
     private Socket client;
     private BlockingQueue<String> queue;
+    private StreamMessages mCallBack;
     private static final String TAG = "ClientWorker";
 
     @Override
@@ -26,9 +26,10 @@ public class ClientWorker implements Runnable {
     }
 
     //Constructor
-    ClientWorker(Socket client, BlockingQueue<String> queue) {
+    ClientWorker(Socket client, BlockingQueue<String> queue, StreamMessages mCallBack) {
         this.client = client;
         this.queue = queue;
+        this.mCallBack = mCallBack;
     }
 
     public void run() {
@@ -63,27 +64,13 @@ public class ClientWorker implements Runnable {
 
             while (true) {
                 String obj = in.readUTF();
-                int opt = in.readInt();
-                Log.d("ffffffff", " Receding from service: " + obj);
+
+                Log.d(TAG, " Receding from service: " + obj);
                 if (obj == null) break;
-
-                JSONObject json = new JSONObject(obj);
-                if (json.getString("type").equals("offer")) {
-                    Log.d(TAG, "onHandleIntent: offer Received");
-                    //startActivityForCall(obj, opt);
-                } else if (json.getString("type").equals("candidate")) {
-                    Log.d(TAG, "onHandleIntent: candidate Received");
-                    //send candidate
-                    /*if (serviceCallbacks != null) {
-                        serviceCallbacks.getMessageFromService(json);
-                    } else {
-                        messageQueue.add(json);
-                    }*/
-
-                }
+                mCallBack.onStreamMessage(obj);
 
             }
-        } catch (IOException | JSONException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
         try {

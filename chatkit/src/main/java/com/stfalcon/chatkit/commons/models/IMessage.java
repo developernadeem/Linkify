@@ -28,7 +28,7 @@ public interface IMessage {
      *
      * @return the message id
      */
-    String getId();
+    int getId();
 
     /**
      * Returns message text
@@ -42,12 +42,19 @@ public interface IMessage {
      *
      * @return the message author
      */
-    IUser getUser();
+    String getUserId();
 
     /**
      * Returns message creation date
      *
      * @return the message creation date
      */
-    Date getCreatedAt();
+    Date getDate();
+    /**
+     * @see  {@link android.net.Uri} of media
+     *
+     * @return the uri
+     */
+    String getUri();
+
 }

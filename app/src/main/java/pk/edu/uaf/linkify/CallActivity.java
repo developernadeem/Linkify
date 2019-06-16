@@ -14,6 +14,8 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.AudioSource;
@@ -49,7 +51,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import androidx.appcompat.app.AppCompatActivity;
 import pk.edu.uaf.linkify.Interfaces.OnCallEvent;
 import pk.edu.uaf.linkify.Interfaces.ServiceCallBacks;
 import pk.edu.uaf.linkify.ServicesAndThreads.AppExecutor;
@@ -546,6 +547,11 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks
         } catch (JSONException e) {
             Log.d(TAG, "getMessageFromService: " + e.getMessage());
         }
+    }
+
+    @Override
+    public void getUserMessage(String msg,int type) {
+
     }
 
     private void doBindService() {

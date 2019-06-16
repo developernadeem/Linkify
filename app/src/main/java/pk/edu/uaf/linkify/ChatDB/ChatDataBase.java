@@ -7,9 +7,13 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
 
+import pk.edu.uaf.linkify.Modal.LinkifyChat;
+import pk.edu.uaf.linkify.Modal.LinkifyMessage;
+import pk.edu.uaf.linkify.Modal.LinkifyUser;
+
 import static pk.edu.uaf.linkify.Utils.AppConstant.DATABASE_NAME;
 
-@Database(entities = {Users.class,Messages.class},version = 1,exportSchema = false)
+@Database(entities = {LinkifyUser.class, LinkifyMessage.class, LinkifyChat.class},version = 2,exportSchema = false)
 @TypeConverters(DateConverter.class)
 public abstract class ChatDataBase extends RoomDatabase {
 

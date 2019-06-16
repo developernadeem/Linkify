@@ -1,6 +1,8 @@
 package pk.edu.uaf.linkify.Fragments;
 
+import android.app.ActivityManager;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -12,19 +14,21 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 
-import com.bumptech.glide.Glide;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+
+import com.bumptech.glide.Glide;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import de.hdodenhof.circleimageview.CircleImageView;
 import pk.edu.uaf.linkify.R;
-import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyIntentService;
+import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyService;
 import pk.edu.uaf.linkify.Utils.PrefUtils;
 
+import static pk.edu.uaf.linkify.Utils.AppConstant.ACTION_START_SERVICE;
 import static pk.edu.uaf.linkify.Utils.AppConstant.USER_IMAGE_PATH;
 
 public class ConnectFragment extends Fragment implements View.OnClickListener, CompoundButton.OnCheckedChangeListener {
@@ -50,6 +54,10 @@ public class ConnectFragment extends Fragment implements View.OnClickListener, C
         }
         btnWifi.setOnClickListener(this);
         btnHotspot.setOnClickListener(this);
+        if (isMyServiceRunning()){
+            onlineStatus.setColorFilter(ContextCompat.getColor(getContext(), R.color.colorOnline), android.graphics.PorterDuff.Mode.SRC_IN);
+            serviceCheckbox.setChecked(true);
+        }
         serviceCheckbox.setOnCheckedChangeListener(this);
         return view;
     }
@@ -76,16 +84,26 @@ public class ConnectFragment extends Fragment implements View.OnClickListener, C
             if (isChecked){
                 onlineStatus.setColorFilter(ContextCompat.getColor(getContext(), R.color.colorOnline), android.graphics.PorterDuff.Mode.SRC_IN);
 
-                Intent serviceIntent = new Intent(getActivity(), LinkifyIntentService.class);
+                Intent serviceIntent = new Intent(getActivity(), LinkifyService.class);
+                serviceIntent.setAction(ACTION_START_SERVICE);
                 ContextCompat.startForegroundService(getActivity(), serviceIntent);
             }else {
                 onlineStatus.setColorFilter(ContextCompat.getColor(getContext(), R.color.colorDivider), android.graphics.PorterDuff.Mode.SRC_IN);
-                Intent serviceIntent = new Intent(getActivity(), LinkifyIntentService.class);
+                Intent serviceIntent = new Intent(getActivity(), LinkifyService.class);
                 getContext().stopService(serviceIntent);
             }
         }catch (Exception ignored){
             //Exception ignore if any
         }
 
+    }
+    private boolean isMyServiceRunning() {
+        ActivityManager manager = (ActivityManager) getActivity().getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (LinkifyService.class.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

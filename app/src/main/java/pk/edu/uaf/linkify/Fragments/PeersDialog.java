@@ -6,29 +6,38 @@ import android.content.Context;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.airbnb.lottie.LottieAnimationView;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import pk.edu.uaf.linkify.Adapter.MyServicesRecyclerAdapter;
 import pk.edu.uaf.linkify.R;
+import pk.edu.uaf.linkify.ServicesAndThreads.AppExecutor;
+import pk.edu.uaf.linkify.Utils.PrefUtils;
+
+import static pk.edu.uaf.linkify.Utils.AppConstant.USER_SERVICE_NAME;
 
 /**
  * @author Muhammad Nadeem
  * @Date 5/12/2019.
  */
-public class PeersDialog extends DialogFragment  {
+public class PeersDialog extends DialogFragment {
     private static final String TAG = "PeersDialog";
     private OnPeerItemClickListener mListener;
 
@@ -39,6 +48,8 @@ public class PeersDialog extends DialogFragment  {
 
     @BindView(R.id.recyclerview)
     RecyclerView recyclerView;
+    @BindView(R.id.lottie_view)
+    LottieAnimationView lottieView;
     NsdManager.DiscoveryListener mDiscoveryListener;
     List<NsdServiceInfo> serviceInfos = new ArrayList<>();
     private NsdManager mNsdManager;
@@ -63,6 +74,17 @@ public class PeersDialog extends DialogFragment  {
         return v;
     }
 
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        new Handler().postDelayed(() -> {
+            if (serviceInfos.isEmpty()) {
+                lottieView.setAnimation("no_nearby.json");
+                lottieView.playAnimation();
+            }
+        }, 10000);
+    }
+
     /**
      * The system calls this only when creating the layout in a dialog.
      */
@@ -77,6 +99,7 @@ public class PeersDialog extends DialogFragment  {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         return dialog;
     }
+
     private void initializeDiscoveryListener() {
 
         // Instantiate a new DiscoveryListener
@@ -104,34 +127,55 @@ public class PeersDialog extends DialogFragment  {
                     public void onServiceResolved(NsdServiceInfo serviceInfo) {
                         Log.e(TAG, "Resolve Succeeded. " + serviceInfo);
 
-                /*if (serviceInfo.getServiceName().equals(mServiceName)) {
-                    Log.d(TAG, "Same IP.");
-                    return;
-                }*/
+                        if (serviceInfo.getServiceName().equals(PrefUtils.getStringPref(getContext(), USER_SERVICE_NAME))) {
+                            Log.d(TAG, "Same IP.");
+                            return;
+                        }
                         //mService = serviceInfo;
-                        serviceInfos.add(serviceInfo);
-                        getActivity().runOnUiThread(() -> adapter.notifyDataSetChanged());
+                        boolean add = true;
+                        for (NsdServiceInfo info : serviceInfos) {
+                            if (info.getServiceName().equals(serviceInfo.getServiceName())){
+                                add = false;
+                            }
+                        }
+                        if (add) {
+
+                            serviceInfos.add(serviceInfo);
+                            AppExecutor.getInstance().getMainThread().execute(() -> {
+                                switch (lottieView.getVisibility()) {
+                                    case View.VISIBLE:
+                                        recyclerView.setVisibility(View.VISIBLE);
+                                        lottieView.pauseAnimation();
+                                        lottieView.setVisibility(View.GONE);
+
+                                    case View.GONE:
+                                        break;
+                                    case View.INVISIBLE:
+                                        break;
+                                }
+                                adapter.notifyDataSetChanged();
+                            });
+                        }
 
 
                     }
                 });
-                /*if (!service.getServiceType().equals("_http._tcp.")) {
-                    // Service type is the string containing the protocol and
-                    // transport layer for this service.
-                    Log.d(TAG, "Unknown Service Type: " + service.getServiceType());
-                } else if (service.getServiceName().equals("Nadeem Chat")) {
-                    // The name of the service tells the user what they'd be
-                    // connecting to. It could be "Bob's Chat App".
-                    Log.d(TAG, "Same machine: " + "Nadeem Chat");
-                } else if (service.getServiceName().contains("Nadeem Chat")){
 
-                }*/
             }
 
             @Override
             public void onServiceLost(NsdServiceInfo service) {
                 // When the network service is no longer available.
                 // Internal bookkeeping code goes here.
+                for (int i = 0; i < serviceInfos.size(); i++) {
+                    NsdServiceInfo serviceInfo = serviceInfos.get(i);
+                    if (serviceInfo.getServiceName().equals(service.getServiceName())){
+                        serviceInfos.remove(i);
+                        AppExecutor.getInstance().getMainThread().execute(() -> adapter.notifyDataSetChanged());
+                        return;
+                    }
+                }
+
                 Log.e(TAG, "service lost: " + service);
             }
 

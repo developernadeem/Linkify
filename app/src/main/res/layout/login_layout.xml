@@ -27,7 +27,7 @@
             android:id="@+id/imagePerson"
             android:layout_width="160dp"
             android:layout_height="160dp"
-            android:src="@drawable/ic_boy" />
+            android:src="@drawable/ic_user" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/cam_icon"
