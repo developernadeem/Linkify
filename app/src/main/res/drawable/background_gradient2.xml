@@ -5,7 +5,7 @@
         android:radius="0dp"
         />
     <gradient
-        android:angle="0"
+        android:angle="135"
         android:centerX="50%"
         android:centerColor="@color/colorPrimary"
         android:startColor="@color/colorPrimaryDark"

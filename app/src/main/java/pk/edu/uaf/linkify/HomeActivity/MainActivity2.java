@@ -3,6 +3,8 @@ package pk.edu.uaf.linkify.HomeActivity;
 import android.content.Intent;
 import android.net.nsd.NsdServiceInfo;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,6 +18,7 @@ import com.google.android.material.tabs.TabLayout;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import pk.edu.uaf.linkify.AboutActivity;
 import pk.edu.uaf.linkify.Adapter.MyServicesRecyclerAdapter;
 import pk.edu.uaf.linkify.Adapter.ViewPagerAdapter;
 import pk.edu.uaf.linkify.Fragments.CallsFragment;
@@ -92,6 +95,22 @@ public class MainActivity2 extends AppCompatActivity implements View.OnClickList
     public void ItemClickListener(NsdServiceInfo info, LinkifyUser user) {
         ChatsFragment fragment = (ChatsFragment) adapter.getItem(1);
         fragment.onNewChat(info, user);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main,menu);
+        return super.onCreateOptionsMenu(menu);
+
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.about) {
+            Intent i = new Intent(this, AboutActivity.class);
+            startActivity(i);
+        }
+        return super.onOptionsItemSelected(item);
     }
 }
 

@@ -9,7 +9,25 @@
     <string name="connect_through_hotspot">Create Hotspot</string>
     <string name="ic_online">Online</string>
     <string name="ringing">RINGING...</string>
-    <string name="name" >Muhammad Nadeem</string>
+    <string name="name">Muhammad Nadeem</string>
     <string name="incoming_call">Incoming Call</string>
     <string name="outgoing_call">Outgoing Call</string>
+    <string name="lorum">Thanks to Allah Almighty the most beneficient and merciful! \nThanks to all the Teachers, Mentors , Class Mates who helped us in our
+    difficult times. A special thanks and gratitude to <b>Mr. Shabbir Abbasi</b> for helping us in our course work. We also want to thanks <b>Mr Zeeshan Asif</b>
+        for presenting us this idea. At Last but not least special thanks to <b>Miss Sidra Shahid</b> for supervising us in these two semesters. Without the prayers of our Teachers and Parents it would not be possible for us to achieve this. </string>
+    <string name="permission_message">Linkify needs to access <b>Microphone</b>  , <b> Camera </b>  and <b> Storage</b> . Please grant all these permissions so that <b>Linkify</b> can function properly. </string>
+    <string name="grant_permissions">Grant Permissions</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="first_name">First Name</string>
+    <string name="last_name">Last Name</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="about">About</string>
+    <string name="sunbal_nawaz">Sunbal Nawaz</string>
+    <string name="developer">Developer</string>
+    <string name="muhammad_nadeem">Muhammad Nadeem</string>
+    <string name="umair_shafique">Umair Shafique</string>
+    <string name="supervisor">Supervisor</string>
+    <string name="sidra_shahid">Sidra Shahid</string>
 </resources>

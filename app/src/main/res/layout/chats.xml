@@ -37,7 +37,7 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="1.0"
             app:lottie_autoPlay="true"
-            app:lottie_colorFilter="@color/colorAccent"
+            app:lottie_colorFilter="@color/colorAccent2"
             app:lottie_fileName="best.json"
             app:lottie_loop="true" />
 
