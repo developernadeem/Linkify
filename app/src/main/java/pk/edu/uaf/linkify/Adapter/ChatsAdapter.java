@@ -24,6 +24,8 @@ import pk.edu.uaf.linkify.Modal.LinkifyChat;
 import pk.edu.uaf.linkify.Modal.LinkifyUser;
 import pk.edu.uaf.linkify.R;
 
+import static pk.edu.uaf.linkify.Utils.AppConstant.MESSAGE;
+
 public class ChatsAdapter extends RecyclerView.Adapter<ChatsAdapter.Holder> {
 
     private Context context;
@@ -72,6 +74,7 @@ public class ChatsAdapter extends RecyclerView.Adapter<ChatsAdapter.Holder> {
         holder.chatsLayout.setOnClickListener(view -> {
             //Use context or getActivty in fragments
             Intent intent = new Intent(context, ChatActivity.class);
+            intent.setAction(MESSAGE);
             intent.putExtra("id",chat.getChatId());
             intent.putExtra("userId",user.getId());
             context.startActivity(intent);

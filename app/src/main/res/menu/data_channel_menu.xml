@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-    <item android:id="@+id/sendImsge"
+
+    <item
+        android:id="@+id/videoCall"
+        android:icon="@drawable/video_call"
         android:title="@string/send_image"
-        android:icon="@android:drawable/ic_menu_send"
-        app:showAsAction="always"/>
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/voiceCall"
+        android:icon="@drawable/call"
+        android:title="@string/send_image"
+        app:showAsAction="ifRoom" />
 
 </menu>

@@ -14,8 +14,11 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProviders;
 
 import com.bumptech.glide.Glide;
@@ -31,16 +34,24 @@ import java.util.Objects;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import pk.edu.uaf.linkify.ChatDB.ChatDataBase;
+import pk.edu.uaf.linkify.Fragments.IncomingCallFragment;
+import pk.edu.uaf.linkify.Fragments.OutGoingCallFragment;
 import pk.edu.uaf.linkify.Interfaces.ServiceCallBacks;
 import pk.edu.uaf.linkify.Modal.LinkifyMessage;
 import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyService;
 import pk.edu.uaf.linkify.Utils.PrefUtils;
 
+import static pk.edu.uaf.linkify.Utils.AppConstant.ACTION_CONNECT_INFO;
 import static pk.edu.uaf.linkify.Utils.AppConstant.GALLERY_REQUEST_CODE;
+import static pk.edu.uaf.linkify.Utils.AppConstant.IN_COMING_VIDEO;
+import static pk.edu.uaf.linkify.Utils.AppConstant.IN_COMING_VOICE;
+import static pk.edu.uaf.linkify.Utils.AppConstant.MESSAGE;
+import static pk.edu.uaf.linkify.Utils.AppConstant.OUT_GOING_VIDEO;
+import static pk.edu.uaf.linkify.Utils.AppConstant.OUT_GOING_VOICE;
 import static pk.edu.uaf.linkify.Utils.AppConstant.USER_SERVICE_NAME;
 import static pk.edu.uaf.linkify.Utils.UtilsFunctions.pickFromGallery;
 
-public class ChatActivity extends AppCompatActivity implements ServiceCallBacks {
+public class ChatActivity extends AppCompatActivity implements ServiceCallBacks, OutGoingCallFragment.OnOutDropClickListner {
 
     private static final String TAG = "ChatActivity";
     /*
@@ -48,7 +59,7 @@ public class ChatActivity extends AppCompatActivity implements ServiceCallBacks 
     private NsdServiceInfo mInfo;
     private boolean isConnectionSentToService = false;
     private boolean mIsBound;
-
+    private boolean isInitiator = false;
     LinkifyService mService;
     @BindView(R.id.messagesList)
     MessagesList list;
@@ -65,10 +76,48 @@ public class ChatActivity extends AppCompatActivity implements ServiceCallBacks 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+        doBindService();
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         ButterKnife.bind(this);
-        doBindService();
         Intent intent = getIntent();
+        if (intent.getAction() != null) {
+            switch (intent.getAction()) {
+                case OUT_GOING_VIDEO:
+
+                    break;
+                case OUT_GOING_VOICE:
+
+                    break;
+                case IN_COMING_VIDEO:
+                    replaceFragment(IncomingCallFragment.newInstance(),"incoming_video");
+                    break;
+                case IN_COMING_VOICE:
+                    replaceFragment(IncomingCallFragment.newInstance(),"incoming_voice");
+                    break;
+                case ACTION_CONNECT_INFO:
+                    initViewModel(intent);
+                    connectSocket(intent);
+                    break;
+                case MESSAGE:
+                    initViewModel(intent);
+                    break;
+            }
+        }
+
+
+    }
+
+    private void connectSocket(Intent intent) {
+        if (intent.hasExtra("info")) {
+            mInfo = intent.getParcelableExtra("info");
+            if (mService != null) {
+                isConnectionSentToService = true;
+                mService.connectToSocket(mInfo, PrefUtils.getStringPref(this, USER_SERVICE_NAME));
+            }
+        }
+    }
+
+    private void initViewModel(Intent intent) {
         chatId = intent.getLongExtra("id", 0);
         mRemoteUserId = intent.getStringExtra("userId");
         ChatViewModelFactory factory = new ChatViewModelFactory(ChatDataBase.getInstance(this), chatId);
@@ -78,14 +127,6 @@ public class ChatActivity extends AppCompatActivity implements ServiceCallBacks 
             viewModel.getMessages().removeObservers(ChatActivity.this);
             adapter.addToEnd(linkifyMessages, false);
         });
-        if (intent.hasExtra("info")) {
-            mInfo = intent.getParcelableExtra("info");
-            if (mService != null) {
-                isConnectionSentToService = true;
-                mService.connectToSocket(mInfo, PrefUtils.getStringPref(this, USER_SERVICE_NAME));
-            }
-        }
-
         list.setAdapter(adapter);
         input.setInputListener(input -> {
             //validate and send message
@@ -94,11 +135,11 @@ public class ChatActivity extends AppCompatActivity implements ServiceCallBacks 
             if (mService != null)
                 mService.sendMessage(input.toString());
             viewModel.insertMessage(msg);
-            viewModel.updateChat(chatId,msg.getmText(),new Date());
+            viewModel.updateChat(chatId, msg.getmText(), new Date());
             return true;
         });
         input.setAttachmentsListener(() -> {
-            pickFromGallery(ChatActivity.this) ;
+            pickFromGallery(ChatActivity.this);
         });
     }
 
@@ -159,24 +200,36 @@ public class ChatActivity extends AppCompatActivity implements ServiceCallBacks 
         Log.d(TAG, "getUserMessage: " + msg);
         runOnUiThread(() -> {
             LinkifyMessage message;
-            if (type == 0){
+            if (type == 0) {
                 message = new LinkifyMessage(null, new Date(), msg, mRemoteUserId, chatId);
-            }else {
+            } else {
                 message = new LinkifyMessage(msg, new Date(), null, mRemoteUserId, chatId);
             }
 
             adapter.addToStart(message, true);
             viewModel.insertMessage(message);
-            viewModel.updateChat(chatId,msg,new Date());
+            viewModel.updateChat(chatId, msg, new Date());
         });
     }
+
+    @Override
+    public void inComingVideoCall() {
+        replaceFragment(IncomingCallFragment.newInstance(),"incoming_video");
+    }
+
+    @Override
+    public void inComingVoiceCall() {
+        replaceFragment(IncomingCallFragment.newInstance(),"incoming_voice");
+    }
+
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         doUnbindService();
     }
-    public void onActivityResult(int requestCode,int resultCode,Intent data) {
+
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
         // Result code is RESULT_OK only if the user selects an Image
         if (resultCode == Activity.RESULT_OK)
             if (requestCode == GALLERY_REQUEST_CODE) {//data.getData returns the content URI for the selected Image
@@ -190,12 +243,47 @@ public class ChatActivity extends AppCompatActivity implements ServiceCallBacks 
                 int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
                 String picturePath = cursor.getString(columnIndex);
                 cursor.close();
-                LinkifyMessage msg =new LinkifyMessage(null,new Date(),picturePath,Build.SERIAL,chatId);
+                LinkifyMessage msg = new LinkifyMessage(null, new Date(), picturePath, Build.SERIAL, chatId);
                 viewModel.insertMessage(msg);
-                adapter.addToStart(msg,true);
-                if (mService != null){
+                adapter.addToStart(msg, true);
+                if (mService != null) {
                     mService.sendImage(picturePath);
                 }
             }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.data_channel_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.voiceCall:
+                if (mService != null) {
+                    mService.sendSignal(IN_COMING_VOICE);
+                    replaceFragment(OutGoingCallFragment.newInstance(), "out_ring");
+                }
+                break;
+            case R.id.videoCall:
+                if (mService != null) {
+                    mService.sendSignal(IN_COMING_VIDEO);
+                    replaceFragment(OutGoingCallFragment.newInstance(), "out_ring");
+                }
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void replaceFragment(Fragment fragment, String TAG) {
+        getSupportFragmentManager().beginTransaction().replace(R.id.container_layout, fragment, TAG).addToBackStack(null).commitAllowingStateLoss();
+    }
+
+
+    @Override
+    public void onOutDrop() {
+
     }
 }

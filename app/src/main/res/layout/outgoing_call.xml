@@ -94,7 +94,7 @@
         app:layout_constraintVertical_bias="0.0" />
 
     <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/pick"
+        android:id="@+id/drop"
         android:layout_width="130dp"
         android:layout_height="130dp"
         android:layout_marginStart="32dp"
@@ -119,11 +119,12 @@
     <ImageView
         android:layout_width="32dp"
         android:layout_height="32dp"
+        android:layout_marginBottom="8dp"
         android:src="@drawable/ic_hang_call"
-        app:layout_constraintBottom_toBottomOf="@+id/pick"
-        app:layout_constraintEnd_toEndOf="@+id/pick"
-        app:layout_constraintStart_toStartOf="@+id/pick"
-        app:layout_constraintTop_toTopOf="@+id/pick" />
+        app:layout_constraintBottom_toBottomOf="@+id/drop"
+        app:layout_constraintEnd_toEndOf="@+id/drop"
+        app:layout_constraintStart_toStartOf="@+id/drop"
+        app:layout_constraintTop_toTopOf="@+id/drop" />
 
 
 

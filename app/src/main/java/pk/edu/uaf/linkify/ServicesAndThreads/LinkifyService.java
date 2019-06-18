@@ -56,13 +56,20 @@ import pk.edu.uaf.linkify.Utils.PrefUtils;
 import pk.edu.uaf.linkify.Utils.UtilsFunctions;
 
 import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
+import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 import static org.webrtc.SessionDescription.Type.ANSWER;
 import static org.webrtc.SessionDescription.Type.OFFER;
 import static pk.edu.uaf.linkify.BroadCastReceivers.App.CHANNEL_ID;
 import static pk.edu.uaf.linkify.Utils.AppConstant.ACTION_START_SERVICE;
 import static pk.edu.uaf.linkify.Utils.AppConstant.CHUNK_SIZE;
+import static pk.edu.uaf.linkify.Utils.AppConstant.IN_COMING_VIDEO;
+import static pk.edu.uaf.linkify.Utils.AppConstant.IN_COMING_VOICE;
 import static pk.edu.uaf.linkify.Utils.AppConstant.NOTIFICATION_CHANEL_ID;
 import static pk.edu.uaf.linkify.Utils.AppConstant.NOTIFICATION_ID;
+import static pk.edu.uaf.linkify.Utils.AppConstant.OUT_GOING_VIDEO_OK;
+import static pk.edu.uaf.linkify.Utils.AppConstant.OUT_GOING_VIDEO_REJECT;
+import static pk.edu.uaf.linkify.Utils.AppConstant.OUT_GOING_VOICE_OK;
+import static pk.edu.uaf.linkify.Utils.AppConstant.OUT_GOING_VOICE_REJECT;
 import static pk.edu.uaf.linkify.Utils.AppConstant.SHOW_CONNECT_PAGE;
 import static pk.edu.uaf.linkify.Utils.AppConstant.USER_SERVICE_NAME;
 import static pk.edu.uaf.linkify.Utils.UtilsFunctions.getName;
@@ -509,6 +516,12 @@ public class LinkifyService extends Service implements StreamMessages {
         localDataChannel.send(new DataChannel.Buffer(data, false));
     }
 
+    public void sendSignal(String message) {
+
+        ByteBuffer data = stringToByteBuffer("-n" + message, Charset.defaultCharset());
+        localDataChannel.send(new DataChannel.Buffer(data, false));
+    }
+
     private void readIncomingMessage(ByteBuffer buffer) {
         byte[] bytes;
         if (buffer.hasArray()) {
@@ -536,6 +549,40 @@ public class LinkifyService extends Service implements StreamMessages {
                         ChatDataBase.getInstance(this).myDao().insertMessage(new LinkifyMessage(firstMessage.substring(2), new Date(), null, linkifyUser.getId(), mChatId));
                     });
                 }
+            } else if (type.equals("-n")) {
+
+                String msgType = firstMessage.substring(2);
+                switch (msgType) {
+                    case IN_COMING_VIDEO:
+                        if (mCallBacks != null) {
+                            mCallBacks.inComingVideoCall();
+                        } else {
+                            Intent callIntent = new Intent(this, ChatActivity.class);
+                            callIntent.setAction(IN_COMING_VIDEO);
+                            callIntent.setFlags(FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(callIntent);
+                        }
+                        break;
+                    case IN_COMING_VOICE:
+                        if (mCallBacks != null) {
+                            mCallBacks.inComingVoiceCall();
+                        } else {
+                            Intent callIntent = new Intent(this, ChatActivity.class);
+                            callIntent.setAction(IN_COMING_VOICE);
+                            callIntent.setFlags(FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(callIntent);
+                        }
+                        break;
+                    case OUT_GOING_VIDEO_OK:
+                        break;
+                    case OUT_GOING_VOICE_OK:
+                        break;
+                    case OUT_GOING_VIDEO_REJECT:
+                        break;
+                    case OUT_GOING_VOICE_REJECT:
+                        break;
+                }
+
             }
         } else {
             for (byte b : bytes) {
@@ -574,8 +621,8 @@ public class LinkifyService extends Service implements StreamMessages {
         NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (bmp != null) {
             nb.setStyle(new NotificationCompat.BigPictureStyle()
-            .bigPicture(bmp)
-            .bigLargeIcon(null));
+                    .bigPicture(bmp)
+                    .bigLargeIcon(null));
         } else nb.setContentText(firstMessage);
         manager.notify(1, nb.build());
     }

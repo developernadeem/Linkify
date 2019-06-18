@@ -21,6 +21,15 @@ public final class AppConstant {
     public static final String AUDIO_DISABLED = "disabled";
     public static final String SIGNED_UP_STATUS = "_sign_up";
     public static final String SHOW_CONNECT_PAGE = "_show_connect";
+    public static final String OUT_GOING_VIDEO = "_out_going_video";
+    public static final String OUT_GOING_VOICE = "_out_going_voice";
+    public static final String IN_COMING_VOICE = "_in_coming_voice";
+    public static final String IN_COMING_VIDEO = "_in_coming_video";
+    public static final String OUT_GOING_VOICE_OK = "_out_going_voice_ok";
+    public static final String OUT_GOING_VIDEO_OK = "_out_going_video_ok";
+    public static final String OUT_GOING_VOICE_REJECT = "_out_going_voice_reject";
+    public static final String OUT_GOING_VIDEO_REJECT = "_out_going_video_reject";
+    public static final String MESSAGE = "_message";
 
     public static final String VIDEO_TRACK_ID = "ARDAMSv0";
     public static final String AUDIO_TRACK_ID = "ARDAMSa0";
