@@ -15,7 +15,6 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -32,6 +31,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
+        <activity android:name=".AboutActivity"></activity>
+
         <service
             android:name=".ServicesAndThreads.LinkifyService"
             android:enabled="true"
@@ -47,10 +48,7 @@
 
         <activity
             android:name=".MainActivity"
-            android:theme="@style/NoActionBar">
-
-        </activity>
-
+            android:theme="@style/NoActionBar"></activity>
         <activity android:name=".DiscoverService" />
 
         <activity
@@ -68,9 +66,7 @@
         <activity android:name=".ChatActivity" />
         <activity
             android:name=".SignUpActivity"
-            android:theme="@style/NoActionBar" />
-
-        <!-- provider -->
+            android:theme="@style/NoActionBar" /> <!-- provider -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

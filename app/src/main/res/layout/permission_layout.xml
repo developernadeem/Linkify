@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<app:LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:padding="16dp"
+    app:elevation="24dp"
+    android:orientation="vertical"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center"
+    android:background="@drawable/background_gradient2">
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:layout_width="match_parent"
+        android:layout_height="224dp"
+        android:layout_gravity="center"
+        android:src="@drawable/permission"
+        />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="16dp"
+        android:layout_marginTop="16dp"
+        android:textColor="@android:color/white"
+        style="@style/TextAppearance.MaterialComponents.Headline6"
+        android:text="@string/permission_message"/>
+
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_all_permissions"
+        style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        app:backgroundTint="@color/colorAccent3"
+        android:text="@string/grant_permissions"
+        />
+
+</app:LinearLayout>
