@@ -285,7 +285,8 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks,
 
         videoTrackFromCamera = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
         videoTrackFromCamera.setEnabled(true);
-        videoTrackFromCamera.addRenderer(new VideoRenderer(surfaceView));
+        videoTrackFromCamera.dispose();
+        videoTrackFromCamera.addRenderer(new VideoRenderer(surfaceView2));
         //audio traces
         AudioSource audioSource = factory.createAudioSource(new MediaConstraints());
         audioTrack = factory.createAudioTrack(AUDIO_TRACK_ID,audioSource);
@@ -425,14 +426,30 @@ public class CallActivity extends AppCompatActivity implements ServiceCallBacks,
     }
 
     @Override
-    public void inComingVideoCall() {
+    public void inComingVideoCall(JSONObject object) {
 
     }
 
     @Override
-    public void inComingVoiceCall() {
+    public void onVideoCallPicked() {
 
     }
+
+    @Override
+    public void inComingVoiceCall(JSONObject object) {
+
+    }
+
+    @Override
+    public void onVideoSignals(JSONObject object) {
+
+    }
+
+    @Override
+    public void onVoiceSignals(JSONObject object) {
+
+    }
+
 
     private void doBindService() {
         // Establish a connection with the service.  We use an explicit

@@ -81,7 +81,7 @@ public class MyServicesRecyclerAdapter extends RecyclerView.Adapter<MyServicesRe
             super(itemView);
             userName = itemView.findViewById(R.id.userName);
             userNumber = itemView.findViewById(R.id.userNumber);
-            circle = itemView.findViewById(R.id.circleTextView);
+            circle = itemView.findViewById(R.id.circleTextViewIncomingCall);
             container = itemView.findViewById(R.id.container);
         }
     }

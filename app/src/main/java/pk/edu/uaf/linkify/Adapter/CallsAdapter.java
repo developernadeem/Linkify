@@ -8,6 +8,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import pk.edu.uaf.linkify.R;
 
 
@@ -49,7 +50,7 @@ public class CallsAdapter extends RecyclerView.Adapter<CallsAdapter.CallsViewHol
             imgIcon = itemView.findViewById(R.id.user_dp);
             arrow = itemView.findViewById(R.id.incoming_calls);
             call = itemView.findViewById(R.id.call);
-            textTitle = itemView.findViewById(R.id.name);
+            textTitle = itemView.findViewById(R.id.nameIncommingCall);
             txtdetails = itemView.findViewById(R.id.detail);
             //view = itemView.findViewById(R.id.divider);
 

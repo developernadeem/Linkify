@@ -20,7 +20,7 @@ public class AppExecutor  {
     }
     private AppExecutor(){
         singleThreadExecutor =  Executors.newFixedThreadPool(3);
-        networkExecutor =  Executors.newFixedThreadPool(3);
+        networkExecutor =  Executors.newFixedThreadPool(6);
         mainThread = new MainThreadExecutor();
 
     }
@@ -29,6 +29,7 @@ public class AppExecutor  {
         return singleThreadExecutor;
     }
     public ExecutorService getNetworkExecutor(){  return networkExecutor; }
+    public void prepareNetworkExecutor(){  networkExecutor = Executors.newFixedThreadPool(6); }
 
     public Executor getMainThread() {
         return mainThread;

@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
 
@@ -21,15 +22,16 @@ import pk.edu.uaf.linkify.R;
 public class OutGoingCallFragment extends Fragment {
 
     private OnOutDropClickListner mListener;
-
+    private TextView circleTextViewOutgoingCall,nameOutgoingCall;
     public OutGoingCallFragment() {
         // Required empty public constructor
     }
 
 
-    public static OutGoingCallFragment newInstance() {
+    public static OutGoingCallFragment newInstance(String user) {
         OutGoingCallFragment fragment = new OutGoingCallFragment();
         Bundle args = new Bundle();
+        args.putString("user",user);
         fragment.setArguments(args);
         return fragment;
     }
@@ -44,7 +46,10 @@ public class OutGoingCallFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.outgoing_call,container,false);
-        view.findViewById(R.id.drop).setOnClickListener(v -> {
+        circleTextViewOutgoingCall = view.findViewById(R.id.circleTextViewIncomingCall);
+
+        nameOutgoingCall=view.findViewById(R.id.nameIncommingCall);
+        view.findViewById(R.id.pickcall).setOnClickListener(v -> {
             mListener.onOutDrop();
         });
         return view;

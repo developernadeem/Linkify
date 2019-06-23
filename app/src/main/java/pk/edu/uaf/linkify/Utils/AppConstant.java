@@ -31,6 +31,12 @@ public final class AppConstant {
     public static final String OUT_GOING_VOICE_REJECT = "_out_going_voice_reject";
     public static final String OUT_GOING_VIDEO_REJECT = "_out_going_video_reject";
     public static final String MESSAGE = "_message";
+    public static final String VIDEO_ANSWER = "videoanswer";
+    public static final String VIDEO_OFFER = "videooffer";
+    public static final String VIDEO_CANDIDATE = "videocandidate";
+    public static final String AUDIO_ANSWER = "audioanswer";
+    public static final String AUDIO_OFFER = "audiooffer";
+    public static final String AUDIO_CANDIDATE = "audiocandidate";
 
     public static final String VIDEO_TRACK_ID = "ARDAMSv0";
     public static final String AUDIO_TRACK_ID = "ARDAMSa0";

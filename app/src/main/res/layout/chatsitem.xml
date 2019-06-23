@@ -10,7 +10,7 @@
     android:background="?attr/selectableItemBackground"
     >
     <TextView
-        android:id="@+id/circleTextView"
+        android:id="@+id/circleTextViewIncomingCall"
         android:layout_width="56dp"
         android:layout_height="56dp"
         android:layout_gravity="center_vertical"
@@ -33,7 +33,7 @@
         app:layout_constraintTop_toTopOf="parent"/>
 
     <TextView
-        android:id="@+id/name"
+        android:id="@+id/nameIncommingCall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
@@ -48,7 +48,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toEndOf="@+id/circleTextView"
+        app:layout_constraintStart_toEndOf="@+id/circleTextViewIncomingCall"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.0" />
 
@@ -65,8 +65,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toEndOf="@+id/circleTextView"
-        app:layout_constraintTop_toBottomOf="@+id/name"
+        app:layout_constraintStart_toEndOf="@+id/circleTextViewIncomingCall"
+        app:layout_constraintTop_toBottomOf="@+id/nameIncommingCall"
         app:layout_constraintVertical_bias="0.0" />
 
     <TextView
@@ -79,11 +79,11 @@
         android:layout_marginRight="16dp"
         android:text="8:25 PM"
         android:textSize="10sp"
-        app:layout_constraintBottom_toBottomOf="@+id/name"
+        app:layout_constraintBottom_toBottomOf="@+id/nameIncommingCall"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toEndOf="@+id/name"
-        app:layout_constraintTop_toTopOf="@+id/name" />
+        app:layout_constraintStart_toEndOf="@+id/nameIncommingCall"
+        app:layout_constraintTop_toTopOf="@+id/nameIncommingCall" />
 
     <View
         android:id="@+id/divider"
@@ -98,5 +98,5 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/circleTextView" />
+        app:layout_constraintTop_toBottomOf="@+id/circleTextViewIncomingCall" />
 </androidx.constraintlayout.widget.ConstraintLayout>

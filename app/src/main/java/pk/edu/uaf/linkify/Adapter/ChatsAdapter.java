@@ -98,8 +98,8 @@ public class ChatsAdapter extends RecyclerView.Adapter<ChatsAdapter.Holder> {
         public Holder(@NonNull View itemView) {
             super(itemView);
 
-            img1 = itemView.findViewById(R.id.circleTextView);
-            name = itemView.findViewById(R.id.name);
+            img1 = itemView.findViewById(R.id.circleTextViewIncomingCall);
+            name = itemView.findViewById(R.id.nameIncommingCall);
             lastModified = itemView.findViewById(R.id.lastModified);
 
             lastMessage = itemView.findViewById(R.id.text);

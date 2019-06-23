@@ -42,6 +42,7 @@ import java.util.LinkedList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 
+import pk.edu.uaf.linkify.BroadCastReceivers.App;
 import pk.edu.uaf.linkify.ChatActivity;
 import pk.edu.uaf.linkify.ChatDB.ChatDataBase;
 import pk.edu.uaf.linkify.HomeActivity.MainActivity2;
@@ -61,17 +62,20 @@ import static org.webrtc.SessionDescription.Type.ANSWER;
 import static org.webrtc.SessionDescription.Type.OFFER;
 import static pk.edu.uaf.linkify.BroadCastReceivers.App.CHANNEL_ID;
 import static pk.edu.uaf.linkify.Utils.AppConstant.ACTION_START_SERVICE;
+import static pk.edu.uaf.linkify.Utils.AppConstant.AUDIO_ANSWER;
+import static pk.edu.uaf.linkify.Utils.AppConstant.AUDIO_CANDIDATE;
+import static pk.edu.uaf.linkify.Utils.AppConstant.AUDIO_OFFER;
 import static pk.edu.uaf.linkify.Utils.AppConstant.CHUNK_SIZE;
 import static pk.edu.uaf.linkify.Utils.AppConstant.IN_COMING_VIDEO;
 import static pk.edu.uaf.linkify.Utils.AppConstant.IN_COMING_VOICE;
+import static pk.edu.uaf.linkify.Utils.AppConstant.MESSAGE;
 import static pk.edu.uaf.linkify.Utils.AppConstant.NOTIFICATION_CHANEL_ID;
 import static pk.edu.uaf.linkify.Utils.AppConstant.NOTIFICATION_ID;
-import static pk.edu.uaf.linkify.Utils.AppConstant.OUT_GOING_VIDEO_OK;
-import static pk.edu.uaf.linkify.Utils.AppConstant.OUT_GOING_VIDEO_REJECT;
-import static pk.edu.uaf.linkify.Utils.AppConstant.OUT_GOING_VOICE_OK;
-import static pk.edu.uaf.linkify.Utils.AppConstant.OUT_GOING_VOICE_REJECT;
 import static pk.edu.uaf.linkify.Utils.AppConstant.SHOW_CONNECT_PAGE;
 import static pk.edu.uaf.linkify.Utils.AppConstant.USER_SERVICE_NAME;
+import static pk.edu.uaf.linkify.Utils.AppConstant.VIDEO_ANSWER;
+import static pk.edu.uaf.linkify.Utils.AppConstant.VIDEO_CANDIDATE;
+import static pk.edu.uaf.linkify.Utils.AppConstant.VIDEO_OFFER;
 import static pk.edu.uaf.linkify.Utils.UtilsFunctions.getName;
 import static pk.edu.uaf.linkify.Utils.UtilsFunctions.getSurname;
 import static pk.edu.uaf.linkify.Utils.UtilsFunctions.saveImageToDisk;
@@ -82,7 +86,7 @@ import static pk.edu.uaf.linkify.Utils.UtilsFunctions.saveImageToDisk;
 
 public class LinkifyService extends Service implements StreamMessages {
     private ServiceCallBacks mCallBacks;
-
+    private boolean isEnable = false;
     private static final String TAG = "LinkifyService";
     /**
      * Server Socket for all incoming connections
@@ -152,6 +156,18 @@ public class LinkifyService extends Service implements StreamMessages {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if (isEnable){
+            AppExecutor.getInstance().getNetworkExecutor().shutdownNow();
+            localDataChannel.close();
+            localDataChannel.unregisterObserver();
+            localDataChannel= null;
+            localPeerConnection.close();
+            localPeerConnection = null;
+            factory = null;
+        }
+
+
+
     }
 
     @Override
@@ -283,6 +299,10 @@ public class LinkifyService extends Service implements StreamMessages {
     }
 
     private void startListening() {
+        isEnable = true;
+        if (AppExecutor.getInstance().getNetworkExecutor().isShutdown()){
+            AppExecutor.getInstance().prepareNetworkExecutor();
+        }
         AppExecutor.getInstance().getNetworkExecutor().execute(() -> {
             while (true) {
                 try {
@@ -313,6 +333,9 @@ public class LinkifyService extends Service implements StreamMessages {
         }
         if (info != null) {
             updateChatId(info.getServiceName());
+            if (AppExecutor.getInstance().getNetworkExecutor().isShutdown()){
+                AppExecutor.getInstance().prepareNetworkExecutor();
+            }
             AppExecutor.getInstance().getNetworkExecutor().execute(() -> {
                 try {
                     Socket peer = new Socket(info.getHost(), info.getPort());
@@ -331,7 +354,7 @@ public class LinkifyService extends Service implements StreamMessages {
     }
 
     private void initializePeerConnectionFactory() {
-        PeerConnectionFactory.initializeAndroidGlobals(this, true, true, true);
+        PeerConnectionFactory.initializeAndroidGlobals(App.mContext(), true, true, true);
         factory = new PeerConnectionFactory(null);
     }
 
@@ -471,7 +494,7 @@ public class LinkifyService extends Service implements StreamMessages {
 
             @Override
             public void onAddStream(MediaStream mediaStream) {
-                Log.d(TAG, "onAddStream: ");
+
             }
 
             @Override
@@ -513,6 +536,7 @@ public class LinkifyService extends Service implements StreamMessages {
     public void sendMessage(String message) {
 
         ByteBuffer data = stringToByteBuffer("-s" + message, Charset.defaultCharset());
+        if (localDataChannel != null)
         localDataChannel.send(new DataChannel.Buffer(data, false));
     }
 
@@ -552,35 +576,58 @@ public class LinkifyService extends Service implements StreamMessages {
             } else if (type.equals("-n")) {
 
                 String msgType = firstMessage.substring(2);
-                switch (msgType) {
-                    case IN_COMING_VIDEO:
-                        if (mCallBacks != null) {
-                            mCallBacks.inComingVideoCall();
-                        } else {
-                            Intent callIntent = new Intent(this, ChatActivity.class);
-                            callIntent.setAction(IN_COMING_VIDEO);
-                            callIntent.setFlags(FLAG_ACTIVITY_NEW_TASK);
-                            startActivity(callIntent);
-                        }
-                        break;
-                    case IN_COMING_VOICE:
-                        if (mCallBacks != null) {
-                            mCallBacks.inComingVoiceCall();
-                        } else {
-                            Intent callIntent = new Intent(this, ChatActivity.class);
-                            callIntent.setAction(IN_COMING_VOICE);
-                            callIntent.setFlags(FLAG_ACTIVITY_NEW_TASK);
-                            startActivity(callIntent);
-                        }
-                        break;
-                    case OUT_GOING_VIDEO_OK:
-                        break;
-                    case OUT_GOING_VOICE_OK:
-                        break;
-                    case OUT_GOING_VIDEO_REJECT:
-                        break;
-                    case OUT_GOING_VOICE_REJECT:
-                        break;
+                try {
+                    JSONObject object =  new JSONObject(msgType);
+                    switch (object.getString("type")){
+                        case VIDEO_ANSWER:
+                            if (mCallBacks!=null) {
+                                mCallBacks.onVideoSignals(object);
+                            }
+                            break;
+                        case VIDEO_OFFER:
+                            if (mCallBacks!=null){
+                                mCallBacks.inComingVideoCall(object);
+                            }
+                            else {
+                                Intent intent = new Intent(this,ChatActivity.class);
+                                intent.setAction(IN_COMING_VIDEO);
+                                intent.putExtra("json",object.toString());
+                                intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(intent);
+                            }
+                            break;
+                        case VIDEO_CANDIDATE:
+                            if (mCallBacks!=null){
+                                mCallBacks.onVideoSignals(object);
+                            }
+                            break;
+                        case AUDIO_ANSWER:
+                            if (mCallBacks!=null) {
+                                mCallBacks.onVoiceSignals(object);
+                            }
+                            break;
+                        case AUDIO_OFFER:
+                            if (mCallBacks!=null){
+                                mCallBacks.inComingVoiceCall(object);
+                            }
+                            else {
+                                Intent intent = new Intent(this,ChatActivity.class);
+                                intent.setAction(IN_COMING_VOICE);
+                                intent.putExtra("json",object.toString());
+                                intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(intent);
+                            }
+                            break;
+                        case AUDIO_CANDIDATE:
+                            if (mCallBacks!=null){
+                                mCallBacks.onVoiceSignals(object);
+                            }
+                            break;
+
+
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
 
             }
@@ -609,6 +656,7 @@ public class LinkifyService extends Service implements StreamMessages {
     private void showNotification(String firstMessage, Bitmap bmp) {
         Intent intent = new Intent(this, ChatActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.setAction(MESSAGE);
         intent.putExtra("id", mChatId);
         intent.putExtra("userId", linkifyUser.getId());
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, FLAG_UPDATE_CURRENT);
@@ -676,5 +724,11 @@ public class LinkifyService extends Service implements StreamMessages {
         }
     }
 
+    public PeerConnectionFactory getFactory() {
+        return factory;
+    }
+    public PeerConnection getLocalPeerConnection() {
+        return localPeerConnection;
+    }
 
 }

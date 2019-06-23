@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:visibility="gone"
+    android:id="@+id/incomingCallContainer"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/background_gradient">
 
     <TextView
-        android:id="@+id/textView2"
+        android:id="@+id/textView23"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -27,7 +30,7 @@
         android:drawableStart="@drawable/ic_notification" />
 
     <TextView
-        android:id="@+id/textView3"
+        android:id="@+id/textView33"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -39,10 +42,10 @@
         android:text="@string/incoming_call"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView2" />
+        app:layout_constraintTop_toBottomOf="@+id/textView23" />
 
     <TextView
-        android:id="@+id/circleTextView"
+        android:id="@+id/circleTextViewIncomingCall"
         android:layout_width="120dp"
         android:layout_height="120dp"
         android:layout_gravity="center_vertical"
@@ -60,11 +63,11 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView3"
+        app:layout_constraintTop_toBottomOf="@+id/textView33"
         app:layout_constraintVertical_bias="0.26"
         android:text="MN" />
     <TextView
-        android:id="@+id/name"
+        android:id="@+id/nameIncommingCall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
@@ -73,28 +76,28 @@
         android:textColor="@color/white"
         android:textAlignment="center"
         android:textAppearance="@style/TextAppearance.AppCompat.Title"
-        app:layout_constraintBottom_toBottomOf="@+id/textView4"
-        app:layout_constraintEnd_toEndOf="@+id/circleTextView"
-        app:layout_constraintStart_toStartOf="@+id/circleTextView"
-        app:layout_constraintTop_toBottomOf="@+id/circleTextView"
+        app:layout_constraintBottom_toBottomOf="@+id/tincoming_status"
+        app:layout_constraintEnd_toEndOf="@+id/circleTextViewIncomingCall"
+        app:layout_constraintStart_toStartOf="@+id/circleTextViewIncomingCall"
+        app:layout_constraintTop_toBottomOf="@+id/circleTextViewIncomingCall"
         app:layout_constraintVertical_bias="0.0" />
 
     <TextView
-        android:id="@+id/textView4"
+        android:id="@+id/tincoming_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/ringing"
         android:textAlignment="center"
-    android:textColor="@color/white_two"
+        android:textColor="@color/white_two"
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@+id/name"
-        app:layout_constraintStart_toStartOf="@+id/name"
-        app:layout_constraintTop_toBottomOf="@+id/name"
+        app:layout_constraintEnd_toEndOf="@+id/nameIncommingCall"
+        app:layout_constraintStart_toStartOf="@+id/nameIncommingCall"
+        app:layout_constraintTop_toBottomOf="@+id/nameIncommingCall"
         app:layout_constraintVertical_bias="0.0" />
 
     <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/pick"
+        android:id="@+id/dropcall"
         android:layout_width="120dp"
         android:layout_height="120dp"
         android:layout_marginStart="32dp"
@@ -111,7 +114,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView4"
+        app:layout_constraintTop_toBottomOf="@+id/tincoming_status"
         app:layout_constraintVertical_bias="1.0" >
 
     </com.airbnb.lottie.LottieAnimationView>
@@ -120,13 +123,13 @@
         android:layout_width="32dp"
         android:layout_height="32dp"
         android:src="@drawable/ic_hang_call"
-        app:layout_constraintBottom_toBottomOf="@+id/pick"
-        app:layout_constraintEnd_toEndOf="@+id/pick"
-        app:layout_constraintStart_toStartOf="@+id/pick"
-        app:layout_constraintTop_toTopOf="@+id/pick" />
+        app:layout_constraintBottom_toBottomOf="@+id/dropcall"
+        app:layout_constraintEnd_toEndOf="@+id/dropcall"
+        app:layout_constraintStart_toStartOf="@+id/dropcall"
+        app:layout_constraintTop_toTopOf="@+id/dropcall" />
 
     <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/drop"
+        android:id="@+id/pickcall"
         android:layout_width="120dp"
         android:layout_height="120dp"
         android:layout_marginStart="8dp"
@@ -141,8 +144,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="@+id/pick"
-        app:layout_constraintTop_toBottomOf="@+id/textView4"
+        app:layout_constraintStart_toStartOf="@+id/dropcall"
+        app:layout_constraintTop_toBottomOf="@+id/tincoming_status"
         app:layout_constraintVertical_bias="1.0" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

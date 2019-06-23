@@ -2,11 +2,9 @@ package pk.edu.uaf.linkify;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -16,8 +14,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -140,13 +136,20 @@ public class SignUpActivity extends AppCompatActivity {
                 String fullName = name + " " + last_name;
                 PrefUtils.setStringPref(this, USER_NAME, fullName);
                 PrefUtils.setStringPref(this, USER_NUMBER, number);
-                PrefUtils.setStringPref(this, USER_SERVICE_NAME, fullName + "/" + number + "/" + Build.SERIAL);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    PrefUtils.setStringPref(this, USER_SERVICE_NAME, fullName + "/" + number + "/" + Build.getSerial());
+                }else
+                    PrefUtils.setStringPref(this, USER_SERVICE_NAME, fullName + "/" + number + "/" + Build.SERIAL);
                 PrefUtils.setBooleanPref(this, SIGNED_UP_STATUS, true);
                 AppExecutor.getInstance().getSingleThreadExecutor().execute(() -> {
                     ChatDataBase db = ChatDataBase.getInstance(this);
                     String avatar = getName(fullName).substring(0, 1) +
                             getSurname(fullName).substring(0, 1);
-                    db.myDao().insertUser(new LinkifyUser(Build.SERIAL, fullName, avatar, number));
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        db.myDao().insertUser(new LinkifyUser(Build.getSerial(), fullName, avatar, number));
+                    }else {
+                        db.myDao().insertUser(new LinkifyUser(Build.SERIAL, fullName, avatar, number));
+                    }
                 });
 
                 setResult(RESULT_OK);

@@ -1,11 +1,13 @@
 package pk.edu.uaf.linkify;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.net.nsd.NsdServiceInfo;
@@ -16,8 +18,11 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProviders;
 
@@ -26,6 +31,7 @@ import com.stfalcon.chatkit.messages.MessageInput;
 import com.stfalcon.chatkit.messages.MessagesList;
 import com.stfalcon.chatkit.messages.MessagesListAdapter;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Date;
@@ -34,8 +40,9 @@ import java.util.Objects;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import pk.edu.uaf.linkify.ChatDB.ChatDataBase;
-import pk.edu.uaf.linkify.Fragments.IncomingCallFragment;
-import pk.edu.uaf.linkify.Fragments.OutGoingCallFragment;
+import pk.edu.uaf.linkify.Fragments.VideoCallFragment;
+import pk.edu.uaf.linkify.Fragments.VoiceCallFragment;
+import pk.edu.uaf.linkify.Interfaces.CallFragmentEvents;
 import pk.edu.uaf.linkify.Interfaces.ServiceCallBacks;
 import pk.edu.uaf.linkify.Modal.LinkifyMessage;
 import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyService;
@@ -51,8 +58,7 @@ import static pk.edu.uaf.linkify.Utils.AppConstant.OUT_GOING_VOICE;
 import static pk.edu.uaf.linkify.Utils.AppConstant.USER_SERVICE_NAME;
 import static pk.edu.uaf.linkify.Utils.UtilsFunctions.pickFromGallery;
 
-public class ChatActivity extends AppCompatActivity implements ServiceCallBacks, OutGoingCallFragment.OnOutDropClickListner {
-
+public class ChatActivity extends AppCompatActivity implements ServiceCallBacks, CallFragmentEvents {
     private static final String TAG = "ChatActivity";
     /*
      * Remote users Service Information object which has remote user IP address and port Number*/
@@ -69,13 +75,16 @@ public class ChatActivity extends AppCompatActivity implements ServiceCallBacks,
     private String mRemoteUserId;
     private MessagesListAdapter<LinkifyMessage> adapter;
     private ChatViewModel viewModel;
-
+    private VideoCallFragment callFragment;
+    private VoiceCallFragment voiceCallFragment;
 
     @SuppressLint("HardwareIds")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
         doBindService();
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         ButterKnife.bind(this);
@@ -89,10 +98,21 @@ public class ChatActivity extends AppCompatActivity implements ServiceCallBacks,
 
                     break;
                 case IN_COMING_VIDEO:
-                    replaceFragment(IncomingCallFragment.newInstance(),"incoming_video");
+                    try {
+                        JSONObject jsonObject = new JSONObject(intent.getStringExtra("json"));
+                        inComingVideoCall(jsonObject);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
                     break;
                 case IN_COMING_VOICE:
-                    replaceFragment(IncomingCallFragment.newInstance(),"incoming_voice");
+                    try {
+                        JSONObject jsonObject = new JSONObject(intent.getStringExtra("json"));
+                        inComingVoiceCall(jsonObject);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                     break;
                 case ACTION_CONNECT_INFO:
                     initViewModel(intent);
@@ -122,7 +142,7 @@ public class ChatActivity extends AppCompatActivity implements ServiceCallBacks,
         mRemoteUserId = intent.getStringExtra("userId");
         ChatViewModelFactory factory = new ChatViewModelFactory(ChatDataBase.getInstance(this), chatId);
         viewModel = ViewModelProviders.of(this, factory).get(ChatViewModel.class);
-        adapter = new MessagesListAdapter<>(Build.SERIAL, (imageView, url, payload) -> Glide.with(ChatActivity.this).load(url).into(imageView));
+        adapter = new MessagesListAdapter<>(getSerial(), (imageView, url, payload) -> Glide.with(ChatActivity.this).load(url).into(imageView));
         viewModel.getMessages().observe(this, linkifyMessages -> {
             viewModel.getMessages().removeObservers(ChatActivity.this);
             adapter.addToEnd(linkifyMessages, false);
@@ -130,7 +150,7 @@ public class ChatActivity extends AppCompatActivity implements ServiceCallBacks,
         list.setAdapter(adapter);
         input.setInputListener(input -> {
             //validate and send message
-            LinkifyMessage msg = new LinkifyMessage(input.toString(), new Date(), null, Build.SERIAL, chatId);
+            LinkifyMessage msg = new LinkifyMessage(input.toString(), new Date(), null, getSerial(), chatId);
             adapter.addToStart(msg, true);
             if (mService != null)
                 mService.sendMessage(input.toString());
@@ -138,9 +158,35 @@ public class ChatActivity extends AppCompatActivity implements ServiceCallBacks,
             viewModel.updateChat(chatId, msg.getmText(), new Date());
             return true;
         });
+        input.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (!hasFocus){
+                    hideKeyboard(ChatActivity.this, v);
+                }
+            }
+        });
         input.setAttachmentsListener(() -> {
             pickFromGallery(ChatActivity.this);
         });
+    }
+
+    private String getSerial() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    Activity#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for Activity#requestPermissions for more details.
+                return "unkown";
+            }
+            return Build.getSerial();
+        }
+        else
+            return Build.SERIAL;
     }
 
     private void doBindService() {
@@ -190,6 +236,7 @@ public class ChatActivity extends AppCompatActivity implements ServiceCallBacks,
         }
     };
 
+
     @Override
     public void getMessageFromService(JSONObject message) {
 
@@ -213,13 +260,39 @@ public class ChatActivity extends AppCompatActivity implements ServiceCallBacks,
     }
 
     @Override
-    public void inComingVideoCall() {
-        replaceFragment(IncomingCallFragment.newInstance(),"incoming_video");
+    public void inComingVideoCall(JSONObject jsonObject) {
+
+        callFragment = VideoCallFragment.getInstance(false);
+        replaceFragment(callFragment, "video");
+        callFragment.onRemoteMessage(jsonObject);
     }
 
     @Override
-    public void inComingVoiceCall() {
-        replaceFragment(IncomingCallFragment.newInstance(),"incoming_voice");
+    public void onVideoCallPicked() {
+
+    }
+
+
+    @Override
+    public void inComingVoiceCall(JSONObject object) {
+
+        voiceCallFragment = VoiceCallFragment.getInstance(false);
+        replaceFragment(voiceCallFragment, "video");
+        voiceCallFragment.onRemoteMessage(object);
+    }
+
+    @Override
+    public void onVideoSignals(JSONObject object) {
+        if (callFragment != null) {
+            callFragment.onRemoteMessage(object);
+        }
+    }
+
+    @Override
+    public void onVoiceSignals(JSONObject object) {
+        if (voiceCallFragment!=null){
+            voiceCallFragment.onRemoteMessage(object);
+        }
     }
 
 
@@ -243,7 +316,7 @@ public class ChatActivity extends AppCompatActivity implements ServiceCallBacks,
                 int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
                 String picturePath = cursor.getString(columnIndex);
                 cursor.close();
-                LinkifyMessage msg = new LinkifyMessage(null, new Date(), picturePath, Build.SERIAL, chatId);
+                LinkifyMessage msg = new LinkifyMessage(null, new Date(), picturePath, getSerial(), chatId);
                 viewModel.insertMessage(msg);
                 adapter.addToStart(msg, true);
                 if (mService != null) {
@@ -263,27 +336,43 @@ public class ChatActivity extends AppCompatActivity implements ServiceCallBacks,
         switch (item.getItemId()) {
             case R.id.voiceCall:
                 if (mService != null) {
-                    mService.sendSignal(IN_COMING_VOICE);
-                    replaceFragment(OutGoingCallFragment.newInstance(), "out_ring");
+
+                    voiceCallFragment = VoiceCallFragment.getInstance(true);
+                    replaceFragment(voiceCallFragment, "audio");
                 }
                 break;
             case R.id.videoCall:
                 if (mService != null) {
-                    mService.sendSignal(IN_COMING_VIDEO);
-                    replaceFragment(OutGoingCallFragment.newInstance(), "out_ring");
+
+                    callFragment = VideoCallFragment.getInstance(true);
+                    replaceFragment(callFragment, "video");
                 }
+                break;
+            case android.R.id.home:
+                finish();
                 break;
         }
         return super.onOptionsItemSelected(item);
     }
 
     private void replaceFragment(Fragment fragment, String TAG) {
-        getSupportFragmentManager().beginTransaction().replace(R.id.container_layout, fragment, TAG).addToBackStack(null).commitAllowingStateLoss();
+        getSupportFragmentManager().beginTransaction().replace(R.id.container_layout, fragment, TAG).commitAllowingStateLoss();
     }
-
 
     @Override
-    public void onOutDrop() {
+    public void sendMessage(String message) {
+
+        if (mService != null) {
+            mService.sendSignal(message);
+        }
 
     }
+    private void hideKeyboard(Context context, View view) {
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager)context.getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+    }
+
+
 }

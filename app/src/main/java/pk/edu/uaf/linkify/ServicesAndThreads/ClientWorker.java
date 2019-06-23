@@ -54,6 +54,8 @@ public class ClientWorker implements Runnable {
                 objectOutputStream = null;
             } catch (IOException e) {
                 e.printStackTrace();
+            }catch (Exception ignored){
+
             }
         }).start();
 
@@ -72,6 +74,9 @@ public class ClientWorker implements Runnable {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+        catch (Exception ignored){
+
         }
         try {
             assert in != null;

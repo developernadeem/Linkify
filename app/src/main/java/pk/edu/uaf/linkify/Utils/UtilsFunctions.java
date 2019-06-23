@@ -46,6 +46,9 @@ public final class UtilsFunctions {
                 != PackageManager.PERMISSION_GRANTED
                 || ContextCompat.checkSelfPermission(activity,
                 Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(activity,
+                Manifest.permission.READ_PHONE_STATE)
                 != PackageManager.PERMISSION_GRANTED) {
 
             // Permission is not granted
@@ -64,7 +67,8 @@ public final class UtilsFunctions {
                 ActivityCompat.requestPermissions(activity,
                         new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
                                 Manifest.permission.CAMERA,
-                                Manifest.permission.RECORD_AUDIO},
+                                Manifest.permission.RECORD_AUDIO,
+                        Manifest.permission.READ_PHONE_STATE},
                         MY_PERMISSIONS_REQUEST_READ_CONTACTS);
 
                 // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
@@ -138,23 +142,24 @@ public final class UtilsFunctions {
         }
         return null;
     }
-    public static Uri saveImageToDisk(Context context, Bitmap bitmap){
-        File dir =new File(Environment.getExternalStorageDirectory(),"Linkify");
+
+    public static Uri saveImageToDisk(Context context, Bitmap bitmap) {
+        File dir = new File(Environment.getExternalStorageDirectory(), "Linkify");
         OutputStream fOut = null;
-        if (!dir.exists()){
+        if (!dir.exists()) {
             dir.mkdir();
         }
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
 
-        String name = "IMG_"+ timeStamp+".jpg";
+        String name = "IMG_" + timeStamp + ".jpg";
         File file = new File(dir, name); // the File to save , append increasing numeric counter to prevent files from getting overwritten.
         try {
             fOut = new FileOutputStream(file);
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fOut); // saving the Bitmap to a file compressed as a JPEG with 85% compression rate
             fOut.flush(); // Not really required
             fOut.close(); // do not forget to close the stream
-            MediaStore.Images.Media.insertImage(context.getContentResolver(),file.getAbsolutePath(),file.getName(),file.getName());
-            return FileProvider.getUriForFile(context,"pk.edu.uaf.linkify.provider" , file);
+            MediaStore.Images.Media.insertImage(context.getContentResolver(), file.getAbsolutePath(), file.getName(), file.getName());
+            return FileProvider.getUriForFile(context, "pk.edu.uaf.linkify.provider", file);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -166,15 +171,16 @@ public final class UtilsFunctions {
 
         return null;
     }
-    public static void pickFromGallery(Activity context){
+
+    public static void pickFromGallery(Activity context) {
         //Create an Intent with action as ACTION_PICK
-        Intent intent=new Intent(Intent.ACTION_PICK);
+        Intent intent = new Intent(Intent.ACTION_PICK);
         // Sets the type as image/*. This ensures only components of type image are selected
         intent.setType("image/*");
         //We pass an extra array with the accepted mime types. This will ensure only components with these MIME types as targeted.
         String[] mimeTypes = {"image/jpeg", "image/png"};
-        intent.putExtra(Intent.EXTRA_MIME_TYPES,mimeTypes);
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes);
         // Launching the Intent
-        context.startActivityForResult(intent,GALLERY_REQUEST_CODE);
+        context.startActivityForResult(intent, GALLERY_REQUEST_CODE);
     }
 }

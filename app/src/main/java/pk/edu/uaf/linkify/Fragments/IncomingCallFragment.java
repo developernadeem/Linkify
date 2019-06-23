@@ -1,11 +1,14 @@
 package pk.edu.uaf.linkify.Fragments;
 
+import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import pk.edu.uaf.linkify.R;
@@ -19,8 +22,20 @@ import pk.edu.uaf.linkify.R;
  * create an instance of this fragment.
  */
 public class IncomingCallFragment extends Fragment {
+    private IncomingCallEvent mListener;
+    private TextView circleTextViewIncomingCall,name;
+    private String type;
+public interface IncomingCallEvent{
+    void onCallPick(String type);
+    void onCallDrop(String type);
+}
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
 
+    }
 
     public IncomingCallFragment() {
         // Required empty public constructor
@@ -28,8 +43,12 @@ public class IncomingCallFragment extends Fragment {
 
 
 
-    public static IncomingCallFragment newInstance() {
+    public static IncomingCallFragment newInstance(String user, String type) {
         IncomingCallFragment fragment = new IncomingCallFragment();
+        Bundle bundle=new Bundle();
+        bundle.putString("user",user);
+        bundle.putString("type",type);
+        fragment.setArguments(bundle);
         return fragment;
     }
 
@@ -37,27 +56,42 @@ public class IncomingCallFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_incoming_call, container, false);
+        View v = inflater.inflate(R.layout.fragment_incoming_call, container, false);
+        Bundle b =getArguments();
+        type = b.getString("type");
+
+      circleTextViewIncomingCall = v.findViewById(R.id.circleTextViewIncomingCall);
+
+      name=v.findViewById(R.id.nameIncommingCall);
+
+       v.findViewById(R.id.pickcall).setOnClickListener(v1 -> {
+            mListener.onCallPick(type);
+       });
+
+       v.findViewById(R.id.dropcall).setOnClickListener(v1 -> {
+            mListener.onCallDrop(type);
+       });
+        return v;
     }
 
 
 
-    /*@Override
+    @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        if (context instanceof OnFragmentInteractionListener) {
-            mListener = (OnFragmentInteractionListener) context;
+        if (context instanceof IncomingCallEvent) {
+            mListener = (IncomingCallEvent) context;
         } else {
             throw new RuntimeException(context.toString()
                     + " must implement OnFragmentInteractionListener");
         }
-    }*/
+    }
 
-   /* @Override
+    @Override
     public void onDetach() {
         super.onDetach();
         mListener = null;
-    }*/
+    }
 
     /**
      * This interface must be implemented by activities that contain this

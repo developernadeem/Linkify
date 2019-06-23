@@ -7,15 +7,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
-
-import com.airbnb.lottie.LottieAnimationView;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -24,20 +20,14 @@ import org.webrtc.AudioTrack;
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
-import org.webrtc.CameraVideoCapturer;
 import org.webrtc.DataChannel;
-import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SessionDescription;
-import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
-import org.webrtc.VideoRenderer;
-import org.webrtc.VideoSource;
-import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,38 +35,30 @@ import java.util.List;
 import pk.edu.uaf.linkify.Interfaces.CallFragmentEvents;
 import pk.edu.uaf.linkify.Interfaces.OnCallEvent;
 import pk.edu.uaf.linkify.R;
-import pk.edu.uaf.linkify.ServicesAndThreads.AppExecutor;
 import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyIntentService;
 import pk.edu.uaf.linkify.SimpleSdpObserver;
 import pk.edu.uaf.linkify.Utils.AppRTCAudioManager;
 
 import static org.webrtc.SessionDescription.Type.ANSWER;
 import static org.webrtc.SessionDescription.Type.OFFER;
+import static pk.edu.uaf.linkify.Utils.AppConstant.AUDIO_ANSWER;
+import static pk.edu.uaf.linkify.Utils.AppConstant.AUDIO_CANDIDATE;
 import static pk.edu.uaf.linkify.Utils.AppConstant.AUDIO_DISABLED;
 import static pk.edu.uaf.linkify.Utils.AppConstant.AUDIO_ENABLED;
+import static pk.edu.uaf.linkify.Utils.AppConstant.AUDIO_OFFER;
 import static pk.edu.uaf.linkify.Utils.AppConstant.AUDIO_TRACK_ID;
-import static pk.edu.uaf.linkify.Utils.AppConstant.FPS;
-import static pk.edu.uaf.linkify.Utils.AppConstant.VIDEO_ANSWER;
-import static pk.edu.uaf.linkify.Utils.AppConstant.VIDEO_CANDIDATE;
-import static pk.edu.uaf.linkify.Utils.AppConstant.VIDEO_OFFER;
-import static pk.edu.uaf.linkify.Utils.AppConstant.VIDEO_RESOLUTION_HEIGHT;
-import static pk.edu.uaf.linkify.Utils.AppConstant.VIDEO_RESOLUTION_WIDTH;
-import static pk.edu.uaf.linkify.Utils.AppConstant.VIDEO_TRACK_ID;
 
 /**
  * A simple {@link Fragment} subclass.
  */
-public class VideoCallFragment extends Fragment implements OnCallEvent {
-    public static final String TAG = "VideoCallFragment";
+public class VoiceCallFragment extends Fragment implements OnCallEvent {
 
+    private static final String TAG = VoiceCallFragment.class.getSimpleName();
+    public VoiceCallFragment() {
+        // Required empty public constructor
+    }
 
     private CallFragmentEvents callFragmentEvents;
-    private ConstraintLayout outgoingCallContainer;
-    private ConstraintLayout incomingCallContainer;
-    private FrameLayout videoCall;
-    private LottieAnimationView cancelOutGoing;
-    private LottieAnimationView dropcall;
-    private LottieAnimationView pickcall;
 
     /**
      * Messenger for communicating with service.
@@ -89,16 +71,12 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
     /**
      * Some text view we are using to show state information.
      */
+    private boolean isInitiated = false;
     private boolean isAnswered = false;
     private JSONObject offer = null;
 
-    private SurfaceViewRenderer surfaceView, surfaceView2;
-
     private PeerConnection peerConnection;
-    private VideoCapturer videoCapturer;
-    private EglBase rootEglBase;
     private PeerConnectionFactory factory;
-    private VideoTrack videoTrackFromCamera;
     private AudioTrack audioTrack;
     private AppRTCAudioManager audioManager;
     private List<JSONObject> icecandidates = new ArrayList<>();
@@ -106,12 +84,10 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
     private static final String IS_CALLEE_KEY = "is_callee";
     private boolean isCallee;
 
-    public VideoCallFragment() {
-        //required
-    }
 
-    public static VideoCallFragment getInstance(boolean isCallee) {
-        VideoCallFragment fragment = new VideoCallFragment();
+
+    public static VoiceCallFragment getInstance(boolean isCallee) {
+        VoiceCallFragment fragment = new VoiceCallFragment();
         Bundle bundle = new Bundle();
         bundle.putBoolean(IS_CALLEE_KEY, isCallee);
         fragment.setArguments(bundle);
@@ -129,15 +105,8 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.activity_call, container, false);
+        View v = inflater.inflate(R.layout.fragment_voice_call, container, false);
         initializeSurfaceViews(v);
-        if (isCallee) {
-            outgoingCallContainer.setVisibility(View.VISIBLE);
-            incomingCallContainer.setVisibility(View.GONE);
-        } else {
-            outgoingCallContainer.setVisibility(View.GONE);
-            incomingCallContainer.setVisibility(View.VISIBLE);
-        }
         initializePeerConnectionFactory();
         createVideoTrackFromCameraAndShowIt();
         initializePeerConnections();
@@ -145,10 +114,28 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
         if (isCallee) {
             doCall();
         }
+        if (!isAnswered) {
+
+            isInitiated = true;
+            if (offer != null) {
+                doAnswer(offer);
+                if (!icecandidates.isEmpty()){
+                    for (JSONObject json : icecandidates) {
+                        IceCandidate candidate = null;
+                        try {
+                            candidate = new IceCandidate(json.getString("id"), json.getInt("label"), json.getString("candidate"));
+                            peerConnection.addIceCandidate(candidate);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    icecandidates.clear();
+                }
+            }
+
+        }
         return v;
     }
-
-
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
@@ -161,7 +148,6 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
         Log.d(TAG, "startStreamingVideo: ");
         MediaStream mediaStream = factory.createLocalMediaStream("ARDAMS");
         mediaStream.addTrack(audioTrack);
-        mediaStream.addTrack(videoTrackFromCamera);
         peerConnection.addStream(mediaStream);
 
     }
@@ -177,7 +163,7 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
                 peerConnection.setLocalDescription(new SimpleSdpObserver(), sessionDescription);
                 JSONObject message = new JSONObject();
                 try {
-                    message.put("type", VIDEO_OFFER);
+                    message.put("type", AUDIO_OFFER);
                     message.put("sdp", sessionDescription.description);
                     Log.d(TAG, "onCreateSuccess: offercreated" + message);
                     callFragmentEvents.sendMessage(message.toString());
@@ -205,7 +191,7 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
 
                     JSONObject message = new JSONObject();
 
-                    message.put("type", VIDEO_ANSWER);
+                    message.put("type", AUDIO_ANSWER);
                     message.put("sdp", sessionDescription.description);
                     //use handler to send answer
                     Log.d(TAG, "onCreateSuccess: sending message via serviceS");
@@ -258,7 +244,7 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
                 JSONObject message = new JSONObject();
 
                 try {
-                    message.put("type", VIDEO_CANDIDATE);
+                    message.put("type", AUDIO_CANDIDATE);
                     message.put("label", iceCandidate.sdpMLineIndex);
                     message.put("id", iceCandidate.sdpMid);
                     message.put("candidate", iceCandidate.sdp);
@@ -279,13 +265,9 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
             @Override
             public void onAddStream(MediaStream mediaStream) {
                 Log.d(TAG, "onAddStream: " + mediaStream.audioTracks.size());
-                VideoTrack remoteVideoTrack = mediaStream.videoTracks.get(0);
+                AudioTrack remoteVideoTrack = mediaStream.audioTracks.get(0);
                 remoteVideoTrack.setEnabled(true);
-                remoteVideoTrack.addRenderer(new VideoRenderer(surfaceView2));
-                AppExecutor.getInstance().getMainThread().execute(() -> {
-                    incomingCallContainer.setVisibility(View.GONE);
-                    outgoingCallContainer.setVisibility(View.GONE);
-                });
+
             }
 
             @Override
@@ -310,18 +292,9 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
     private void initializePeerConnectionFactory() {
         PeerConnectionFactory.initializeAndroidGlobals(getContext(), true, true, true);
         factory = new PeerConnectionFactory(null);
-        factory.setVideoHwAccelerationOptions(rootEglBase.getEglBaseContext(), rootEglBase.getEglBaseContext());
     }
 
-    private void createVideoTrackFromCameraAndShowIt() {
-        videoCapturer = createVideoCapturer();
-        VideoSource videoSource = factory.createVideoSource(videoCapturer);
-        videoCapturer.startCapture(VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_HEIGHT, FPS);
-
-        videoTrackFromCamera = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
-        videoTrackFromCamera.setEnabled(true);
-        //videoTrackFromCamera.dispose();
-        videoTrackFromCamera.addRenderer(new VideoRenderer(surfaceView));
+    private void createVideoTrackFromCameraAndShowIt() { ;
         //audio traces
         AudioSource audioSource = factory.createAudioSource(new MediaConstraints());
         audioTrack = factory.createAudioTrack(AUDIO_TRACK_ID, audioSource);
@@ -336,47 +309,6 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
 
     private void initializeSurfaceViews(View view) {
 
-        rootEglBase = EglBase.create();
-        surfaceView = view.findViewById(R.id.surface_view);
-        surfaceView.setZOrderMediaOverlay(true);
-        surfaceView2 = view.findViewById(R.id.surface_view2);
-        surfaceView.init(rootEglBase.getEglBaseContext(), null);
-        surfaceView.setEnableHardwareScaler(true);
-        surfaceView.setMirror(true);
-
-        surfaceView2.init(rootEglBase.getEglBaseContext(), null);
-        surfaceView2.setEnableHardwareScaler(true);
-        surfaceView2.setMirror(true);
-        outgoingCallContainer = view.findViewById(R.id.outgoingCallContainer);
-        incomingCallContainer = view.findViewById(R.id.incomingCallContainer);
-        videoCall = view.findViewById(R.id.videoCall);
-        view.findViewById(R.id.dropcall).setOnClickListener(v -> {
-            //
-        });
-        view.findViewById(R.id.pickcall).setOnClickListener(v -> {
-            incomingCallContainer.setVisibility(View.GONE);
-            outgoingCallContainer.setVisibility(View.GONE);
-            if (offer != null) {
-                doAnswer(offer);
-                isAnswered = true;
-                if (!icecandidates.isEmpty()) {
-                    for (JSONObject json : icecandidates) {
-                        IceCandidate candidate = null;
-                        try {
-                            candidate = new IceCandidate(json.getString("id"), json.getInt("label"), json.getString("candidate"));
-                            peerConnection.addIceCandidate(candidate);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    icecandidates.clear();
-                }
-            }
-            //
-        });
-        view.findViewById(R.id.cancelOutGoing).setOnClickListener(v -> {
-            //
-        });
 
         view.findViewById(R.id.hang_call).setOnClickListener(v -> {
             onCallHangUp();
@@ -460,8 +392,8 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
     @Override
     public void onCameraSwitch() {
         if (peerConnection != null) {
-            CameraVideoCapturer cameraVideoCapturer = (CameraVideoCapturer) videoCapturer;
-            cameraVideoCapturer.switchCamera(null);
+//            CameraVideoCapturer cameraVideoCapturer = (CameraVideoCapturer) videoCapturer;
+//            cameraVideoCapturer.switchCamera(null);
         }
     }
 
@@ -485,8 +417,6 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
             audioManager.close();
             audioManager = null;
         }
-        surfaceView.release();
-        surfaceView2.release();
 
     }
 
@@ -509,31 +439,31 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
     public void onRemoteMessage(JSONObject json) {
         try {
             switch (json.getString("type")) {
-                case VIDEO_ANSWER:
+                case AUDIO_ANSWER:
                     Log.d(TAG, "onReceived: answer received");
                     peerConnection.setRemoteDescription(new SimpleSdpObserver(), new SessionDescription(ANSWER, json.getString("sdp")));
 //
                     break;
-                case VIDEO_CANDIDATE:
+                case AUDIO_CANDIDATE:
                     Log.d(TAG, "onReceived: candidate received");
-                    if (isCallee){
+                    if (isAnswered) {
                         IceCandidate candidate = new IceCandidate(json.getString("id"), json.getInt("label"), json.getString("candidate"));
                         peerConnection.addIceCandidate(candidate);
-                    }else {
-                        if (isAnswered) {
-                            IceCandidate candidate = new IceCandidate(json.getString("id"), json.getInt("label"), json.getString("candidate"));
-                            peerConnection.addIceCandidate(candidate);
-                        } else
-                            icecandidates.add(json);
-                    }
+                    }else
+                        icecandidates.add(json);
                     break;
-                case VIDEO_OFFER:
+                case AUDIO_OFFER:
                     Log.d(TAG, "onReceived: offer received");
-                    offer = json;
+                    if (isInitiated) {
+                        doAnswer(json);
+                        isAnswered = true;
+                    }else
+                        offer = json;
                     break;
             }
         } catch (JSONException e) {
             e.printStackTrace();
         }
     }
+
 }
