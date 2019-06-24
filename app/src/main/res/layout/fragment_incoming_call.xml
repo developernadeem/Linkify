@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:visibility="gone"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:visibility="visible"
     android:id="@+id/incomingCallContainer"
     android:orientation="vertical"
     android:layout_width="match_parent"
@@ -65,14 +65,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView33"
         app:layout_constraintVertical_bias="0.26"
-        android:text="MN" />
+        tools:text="MN" />
     <TextView
         android:id="@+id/nameIncommingCall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
-        android:text="@string/name"
+        tools:text="@string/name"
         android:textColor="@color/white"
         android:textAlignment="center"
         android:textAppearance="@style/TextAppearance.AppCompat.Title"

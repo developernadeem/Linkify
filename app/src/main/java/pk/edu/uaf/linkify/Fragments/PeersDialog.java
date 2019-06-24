@@ -60,7 +60,7 @@ public class PeersDialog extends DialogFragment {
                              Bundle savedInstanceState) {
         Bundle bundle = getArguments();
         // Inflate the layout to use as dialog or embedded fragment
-        View v = inflater.inflate(R.layout.activity_discover_service, container, false);
+        View v = inflater.inflate(R.layout.discover_service_fragment, container, false);
         ButterKnife.bind(this, v);
         mNsdManager = (NsdManager) getContext().getSystemService(Context.NSD_SERVICE);
         adapter = new MyServicesRecyclerAdapter(serviceInfos, getContext());
@@ -86,7 +86,7 @@ public class PeersDialog extends DialogFragment {
     }
 
     /**
-     * The system calls this only when creating the layout in a dialog.
+     * The system calls_fragment this only when creating the layout in a dialog.
      */
     @NonNull
     @Override

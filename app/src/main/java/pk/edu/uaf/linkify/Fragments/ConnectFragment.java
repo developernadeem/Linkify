@@ -47,7 +47,7 @@ public class ConnectFragment extends Fragment implements View.OnClickListener, C
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 
-        View view = inflater.inflate(R.layout.fragment_connect, container, false);
+        View view = inflater.inflate(R.layout.connect_fragment, container, false);
         ButterKnife.bind(this, view);
         if (PrefUtils.getStringPref(getContext(), USER_IMAGE_PATH) != null){
             Glide.with(this).load(PrefUtils.getStringPref(getContext(), USER_IMAGE_PATH)).into(userDp);

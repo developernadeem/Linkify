@@ -1,85 +1,162 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".CallActivity">
-    <LinearLayout
-        android:layout_marginBottom="48dp"
-        android:layout_gravity="bottom|left"
-        android:elevation="4dp"
-        android:translationZ="4dp"
-        android:layout_width="wrap_content"
-        android:orientation="horizontal"
-        android:layout_height="wrap_content"
-        >
-        <ImageView
-            android:id="@+id/hang_call"
-            android:padding="16dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_hang_call"/>
-        <ImageView
-            android:id="@+id/switch_camera"
-            android:padding="16dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_switch"/>
-        <ImageView
-            android:tag="enable"
-            android:id="@+id/microphone"
-            android:padding="16dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_microphone"/>
-    </LinearLayout>
-
-
-    <FrameLayout
-        android:elevation="4dp"
-        android:translationZ="4dp"
-        android:layout_gravity="end|bottom"
-        android:layout_width="150dp"
-        android:layout_height="250dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginBottom="8dp">
-
-        <org.webrtc.SurfaceViewRenderer
-            android:id="@+id/surface_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top|end"
-            android:layout_margin="16dp"
-            android:text="From camera"
-            android:textColor="#fff" />
-    </FrameLayout>
-
-    <FrameLayout
+    android:orientation="vertical">
+    <include
+        layout="@layout/outgoing_call"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+    <include
+        layout="@layout/fragment_incoming_call"
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:visibility="visible"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/outgoingCallContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_weight="1">
+        android:background="@drawable/background_gradient2"
 
-        <org.webrtc.SurfaceViewRenderer
-            android:id="@+id/surface_view2"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+        xmlns:android="http://schemas.android.com/apk/res/android">
 
         <TextView
+            android:id="@+id/LinkifyVoiceCallDuringVoiceCall"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="top|end"
-            android:layout_margin="16dp"
-            android:text="From PeerConection"
-            android:textColor="#fff" />
-    </FrameLayout>
+            android:layout_marginStart="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginRight="8dp"
+            android:drawableStart="@drawable/ic_notification"
+            android:drawableLeft="@drawable/ic_notification"
+            android:drawablePadding="8dp"
+            android:gravity="center"
+            android:text="@string/app_name"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
+            android:textColor="@color/white"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-</FrameLayout>
+        <TextView
+            android:id="@+id/textView3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginRight="8dp"
+            android:textColor="@color/white_five"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+            android:text="@string/outgoing_call"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/LinkifyVoiceCallDuringVoiceCall" />
+
+        <TextView
+            android:id="@+id/circleTextViewDuringVoiceCall"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginTop="32dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/circle_colored"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textView3"
+            app:layout_constraintVertical_bias="0.26"
+            android:text="MN" />
+        <TextView
+            android:id="@+id/nameDuringVoiceCall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:text="@string/name"
+            android:textAlignment="center"
+            android:textColor="@color/white"
+            android:textAppearance="@style/TextAppearance.AppCompat.Title"
+            app:layout_constraintBottom_toBottomOf="@+id/outgoing_status1DuringVoiceCall"
+            app:layout_constraintEnd_toEndOf="@+id/circleTextViewDuringVoiceCall"
+            app:layout_constraintStart_toStartOf="@+id/circleTextViewDuringVoiceCall"
+            app:layout_constraintTop_toBottomOf="@+id/circleTextViewDuringVoiceCall"
+            app:layout_constraintVertical_bias="0.0" />
+
+        <TextView
+            android:id="@+id/outgoing_status1DuringVoiceCall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/duration"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@+id/nameDuringVoiceCall"
+            android:textColor="@color/white_two"
+            app:layout_constraintStart_toStartOf="@+id/nameDuringVoiceCall"
+            app:layout_constraintTop_toBottomOf="@+id/nameDuringVoiceCall"
+            app:layout_constraintVertical_bias="0.0" />
+
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|left"
+            android:layout_marginStart="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginBottom="8dp"
+            android:elevation="4dp"
+            android:orientation="horizontal"
+            android:translationZ="4dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/outgoing_status1DuringVoiceCall">
+
+            <ImageView
+                android:id="@+id/hang_callDuringVoiceCall"
+                android:layout_width="69dp"
+                android:layout_height="69dp"
+                android:tint="@android:color/holo_red_light"
+                android:padding="16dp"
+                android:src="@drawable/ic_hang_call" />
+
+            <ImageView
+                android:id="@+id/speakerDuringVoiceCall"
+                android:layout_width="69dp"
+                android:layout_height="69dp"
+                android:padding="16dp"
+                android:src="@drawable/ic_speaker"
+                android:tag="disabled"/>
+
+            <ImageView
+                android:id="@+id/microphoneDuringVoiceCall"
+                android:layout_width="69dp"
+                android:layout_height="69dp"
+                android:padding="16dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_microphone"
+                android:tag="enable" />
+        </LinearLayout>
+
+
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

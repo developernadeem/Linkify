@@ -592,6 +592,9 @@ public class LinkifyService extends Service implements StreamMessages {
                                 Intent intent = new Intent(this,ChatActivity.class);
                                 intent.setAction(IN_COMING_VIDEO);
                                 intent.putExtra("json",object.toString());
+                                intent.putExtra("userId",linkifyUser.getId());
+                                intent.putExtra("name",linkifyUser.getName());
+                                intent.putExtra("avatar",linkifyUser.getAvatar());
                                 intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
                                 startActivity(intent);
                             }
@@ -614,6 +617,9 @@ public class LinkifyService extends Service implements StreamMessages {
                                 Intent intent = new Intent(this,ChatActivity.class);
                                 intent.setAction(IN_COMING_VOICE);
                                 intent.putExtra("json",object.toString());
+                                intent.putExtra("userId",linkifyUser.getId());
+                                intent.putExtra("name",linkifyUser.getName());
+                                intent.putExtra("avatar",linkifyUser.getAvatar());
                                 intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
                                 startActivity(intent);
                             }
@@ -623,7 +629,36 @@ public class LinkifyService extends Service implements StreamMessages {
                                 mCallBacks.onVoiceSignals(object);
                             }
                             break;
-
+                        case "vid_cancel":
+                            if (mCallBacks!=null){
+                                mCallBacks.onVideoSignals(object);
+                            }
+                            break;
+                        case "vid_end":
+                            if (mCallBacks!=null){
+                                mCallBacks.onVideoSignals(object);
+                            }
+                            break;
+                        case "vid_drop":
+                            if (mCallBacks!=null){
+                                mCallBacks.onVideoSignals(object);
+                            }
+                            break;
+                        case "voice_cancel":
+                            if (mCallBacks!=null){
+                                mCallBacks.onVoiceSignals(object);
+                            }
+                            break;
+                        case "voice_end":
+                            if (mCallBacks!=null){
+                                mCallBacks.onVoiceSignals(object);
+                            }
+                            break;
+                        case "voice_drop":
+                            if (mCallBacks!=null){
+                                mCallBacks.onVoiceSignals(object);
+                            }
+                            break;
 
                     }
                 } catch (JSONException e) {
@@ -665,6 +700,7 @@ public class LinkifyService extends Service implements StreamMessages {
         NotificationCompat.Builder nb = new NotificationCompat.Builder(getApplicationContext(), NOTIFICATION_CHANEL_ID)
                 .setContentTitle("Message")
                 .setSmallIcon(R.drawable.ic_notification)
+                .setSound(Uri.parse("android.resource://pk.edu.uaf.linkify/" + R.raw.skype_sound))
                 .setContentIntent(pendingIntent);
         NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (bmp != null) {

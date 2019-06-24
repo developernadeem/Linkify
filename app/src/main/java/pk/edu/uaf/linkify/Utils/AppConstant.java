@@ -19,6 +19,13 @@ public final class AppConstant {
     public static final String USER_IMAGE_PATH = "_user_image_path";
     public static final String AUDIO_ENABLED = "enable";
     public static final String AUDIO_DISABLED = "disabled";
+    public static final boolean VIDEO_CALL = true;
+    public static final boolean AUDIO_CALL = false;
+    public static final int OUT_GOING = 4;
+    public static final int OUT_GOING_DECLINE = 5;
+    public static final int INCOMING = 6;
+    public static final int INCOMING_REJECTED = 7;
+    public static final int INCOMING_MISSED = 8;
 
     public static final String SIGNED_UP_STATUS = "_sign_up";
     public static final String SHOW_CONNECT_PAGE = "_show_connect";

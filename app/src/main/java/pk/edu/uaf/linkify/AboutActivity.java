@@ -1,13 +1,12 @@
 package pk.edu.uaf.linkify;
 
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Build;
 import android.os.Bundle;
 import android.text.Layout;
 import android.view.MenuItem;
 import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 public class AboutActivity extends AppCompatActivity {
 TextView textView;
@@ -15,7 +14,7 @@ TextView textView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.ourteam);
+        setContentView(R.layout.activity_about_us);
         getSupportActionBar().setTitle("About Us");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         textView=findViewById(R.id.aboutUsText);

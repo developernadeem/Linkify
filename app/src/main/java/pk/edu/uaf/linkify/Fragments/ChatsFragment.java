@@ -53,7 +53,7 @@ public class ChatsFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
 
-        view = inflater.inflate(R.layout.chats, container, false);
+        view = inflater.inflate(R.layout.chats_fragment, container, false);
         ButterKnife.bind(this, view);
         list = new ArrayList<>();
 
@@ -117,6 +117,8 @@ public class ChatsFragment extends Fragment {
                 intent.putExtra("id",id);
                 intent.putExtra("userId",user.getId());
                 intent.putExtra("info", info);
+                intent.putExtra("name",user.getName());
+                intent.putExtra("avatar",user.getAvatar());
                 startActivity(intent);
             }
         }else {
@@ -125,6 +127,8 @@ public class ChatsFragment extends Fragment {
             intent.putExtra("id",chatId);
             intent.putExtra("userId",user.getId());
             intent.putExtra("info", info);
+            intent.putExtra("name",user.getName());
+            intent.putExtra("avatar",user.getAvatar());
             startActivity(intent);
         }
     }

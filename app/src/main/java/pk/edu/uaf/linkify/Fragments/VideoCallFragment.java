@@ -7,15 +7,14 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
-
-import com.airbnb.lottie.LottieAnimationView;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -40,13 +39,14 @@ import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import pk.edu.uaf.linkify.Interfaces.CallFragmentEvents;
 import pk.edu.uaf.linkify.Interfaces.OnCallEvent;
+import pk.edu.uaf.linkify.Modal.LinkifyCalls;
 import pk.edu.uaf.linkify.R;
 import pk.edu.uaf.linkify.ServicesAndThreads.AppExecutor;
-import pk.edu.uaf.linkify.ServicesAndThreads.LinkifyIntentService;
 import pk.edu.uaf.linkify.SimpleSdpObserver;
 import pk.edu.uaf.linkify.Utils.AppRTCAudioManager;
 
@@ -56,7 +56,13 @@ import static pk.edu.uaf.linkify.Utils.AppConstant.AUDIO_DISABLED;
 import static pk.edu.uaf.linkify.Utils.AppConstant.AUDIO_ENABLED;
 import static pk.edu.uaf.linkify.Utils.AppConstant.AUDIO_TRACK_ID;
 import static pk.edu.uaf.linkify.Utils.AppConstant.FPS;
+import static pk.edu.uaf.linkify.Utils.AppConstant.INCOMING;
+import static pk.edu.uaf.linkify.Utils.AppConstant.INCOMING_MISSED;
+import static pk.edu.uaf.linkify.Utils.AppConstant.INCOMING_REJECTED;
+import static pk.edu.uaf.linkify.Utils.AppConstant.OUT_GOING;
+import static pk.edu.uaf.linkify.Utils.AppConstant.OUT_GOING_DECLINE;
 import static pk.edu.uaf.linkify.Utils.AppConstant.VIDEO_ANSWER;
+import static pk.edu.uaf.linkify.Utils.AppConstant.VIDEO_CALL;
 import static pk.edu.uaf.linkify.Utils.AppConstant.VIDEO_CANDIDATE;
 import static pk.edu.uaf.linkify.Utils.AppConstant.VIDEO_OFFER;
 import static pk.edu.uaf.linkify.Utils.AppConstant.VIDEO_RESOLUTION_HEIGHT;
@@ -73,15 +79,14 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
     private CallFragmentEvents callFragmentEvents;
     private ConstraintLayout outgoingCallContainer;
     private ConstraintLayout incomingCallContainer;
-    private FrameLayout videoCall;
-    private LottieAnimationView cancelOutGoing;
-    private LottieAnimationView dropcall;
-    private LottieAnimationView pickcall;
+    private String mRemoteUserName;
+    private long duration = 0;
+    private int type = 4;
+    private String mRemoteUserAvatar;
 
     /**
      * Messenger for communicating with service.
      */
-    private LinkifyIntentService mService = null;
     /**
      * Flag indicating whether we have called bind on the service.
      */
@@ -104,16 +109,20 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
     private List<JSONObject> icecandidates = new ArrayList<>();
 
     private static final String IS_CALLEE_KEY = "is_callee";
+    private static final String NAME_KEY = "name";
+    private static final String AVATAR_KEY = "avatar";
     private boolean isCallee;
 
     public VideoCallFragment() {
         //required
     }
 
-    public static VideoCallFragment getInstance(boolean isCallee) {
+    public static VideoCallFragment getInstance(boolean isCallee,String mRemoteUserName,String mRemoteUserAvatar) {
         VideoCallFragment fragment = new VideoCallFragment();
         Bundle bundle = new Bundle();
         bundle.putBoolean(IS_CALLEE_KEY, isCallee);
+        bundle.putString(NAME_KEY,mRemoteUserName);
+        bundle.putString(AVATAR_KEY,mRemoteUserAvatar);
         fragment.setArguments(bundle);
         return fragment;
 
@@ -124,6 +133,8 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
         super.onCreate(savedInstanceState);
         Bundle bundle = getArguments();
         isCallee = bundle.getBoolean(IS_CALLEE_KEY);
+        mRemoteUserName = bundle.getString(NAME_KEY);
+        mRemoteUserAvatar = bundle.getString(AVATAR_KEY);
     }
 
     @Nullable
@@ -144,7 +155,10 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
         startStreamingVideo();
         if (isCallee) {
             doCall();
+        }else {
+            callFragmentEvents.playSound();
         }
+
         return v;
     }
 
@@ -153,6 +167,7 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
 
     }
 
@@ -167,9 +182,9 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
     }
 
     private void doCall() {
+        callFragmentEvents.stopSound();
+        type =OUT_GOING;
         MediaConstraints sdpMediaConstraints = new MediaConstraints();
-
-
         peerConnection.createOffer(new SimpleSdpObserver() {
             @Override
             public void onCreateSuccess(SessionDescription sessionDescription) {
@@ -191,11 +206,14 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
 
     private void doAnswer(JSONObject obj) {
         Log.d(TAG, "doAnswer: called");
+        callFragmentEvents.stopSound();
+        duration = System.currentTimeMillis();
         try {
             peerConnection.setRemoteDescription(new SimpleSdpObserver(), new SessionDescription(OFFER, obj.getString("sdp")));
         } catch (JSONException e) {
             e.printStackTrace();
         }
+
         peerConnection.createAnswer(new SimpleSdpObserver() {
             @Override
             public void onCreateSuccess(SessionDescription sessionDescription) {
@@ -349,9 +367,24 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
         surfaceView2.setMirror(true);
         outgoingCallContainer = view.findViewById(R.id.outgoingCallContainer);
         incomingCallContainer = view.findViewById(R.id.incomingCallContainer);
-        videoCall = view.findViewById(R.id.videoCall);
+        TextView av1 = view.findViewById(R.id.circleTextViewOutGoingCall);
+        av1.setText(mRemoteUserAvatar);
+        TextView av2 = view.findViewById(R.id.circleTextViewIncomingCall);
+        av2.setText(mRemoteUserAvatar);
+        TextView nm1 = view.findViewById(R.id.nameOutgoingCall);
+        nm1.setText(mRemoteUserName);
+        TextView nm2 = view.findViewById(R.id.nameIncommingCall);
+        nm2.setText(mRemoteUserName);
         view.findViewById(R.id.dropcall).setOnClickListener(v -> {
-            //
+            try {
+                String msg =new JSONObject().put("type","vid_drop").toString();
+                callFragmentEvents.sendMessage(msg);
+                callFragmentEvents.stopSound();
+                type = INCOMING_REJECTED;
+                disconnect();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         });
         view.findViewById(R.id.pickcall).setOnClickListener(v -> {
             incomingCallContainer.setVisibility(View.GONE);
@@ -375,7 +408,14 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
             //
         });
         view.findViewById(R.id.cancelOutGoing).setOnClickListener(v -> {
-            //
+            JSONObject a = new JSONObject();
+            try {
+                a.put("type","vid_cancel");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            callFragmentEvents.sendMessage(a.toString());
+            disconnect();
         });
 
         view.findViewById(R.id.hang_call).setOnClickListener(v -> {
@@ -454,6 +494,12 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
 
     @Override
     public void onCallHangUp() {
+        try {
+            String msg =new JSONObject().put("type","vid_end").toString();
+            callFragmentEvents.sendMessage(msg);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         disconnect();
     }
 
@@ -480,6 +526,7 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
         if (peerConnection != null) {
             peerConnection.close();
             peerConnection = null;
+            factory= null;
         }
         if (audioManager != null) {
             audioManager.close();
@@ -487,6 +534,13 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
         }
         surfaceView.release();
         surfaceView2.release();
+        rootEglBase.detachCurrent();
+        rootEglBase.release();
+        duration = System.currentTimeMillis()-duration;
+        LinkifyCalls call = new LinkifyCalls(new Date(),duration,VIDEO_CALL,type);
+        callFragmentEvents.updateCall(call);
+        callFragmentEvents.popupFragment();
+
 
     }
 
@@ -510,6 +564,7 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
         try {
             switch (json.getString("type")) {
                 case VIDEO_ANSWER:
+                    duration = System.currentTimeMillis();
                     Log.d(TAG, "onReceived: answer received");
                     peerConnection.setRemoteDescription(new SimpleSdpObserver(), new SessionDescription(ANSWER, json.getString("sdp")));
 //
@@ -529,11 +584,39 @@ public class VideoCallFragment extends Fragment implements OnCallEvent {
                     break;
                 case VIDEO_OFFER:
                     Log.d(TAG, "onReceived: offer received");
+                    type = INCOMING;
                     offer = json;
+                    break;
+                case "vid_cancel":
+                    type = INCOMING_MISSED;
+                    AppExecutor.getInstance().getMainThread().execute(() -> {
+                        Toast.makeText(getContext(), "Missed A call", Toast.LENGTH_SHORT).show();
+                    });
+                    disconnect();
+                    break;
+                case "vid_end":
+                    AppExecutor.getInstance().getMainThread().execute(() -> {
+                        Toast.makeText(getContext(), "Call finished", Toast.LENGTH_SHORT).show();
+                    });
+                    disconnect();
+                    break;
+                case "vid_drop":
+                    type =OUT_GOING_DECLINE;
+                    AppExecutor.getInstance().getMainThread().execute(() -> {
+                        Toast.makeText(getContext(), "Peer Busy", Toast.LENGTH_SHORT).show();
+                    });
+                    disconnect();
                     break;
             }
         } catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        callFragmentEvents.stopSound();
+        callFragmentEvents=null;
     }
 }

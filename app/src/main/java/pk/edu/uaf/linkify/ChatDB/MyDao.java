@@ -10,7 +10,9 @@ import androidx.room.Update;
 import java.util.Date;
 import java.util.List;
 
+import pk.edu.uaf.linkify.Modal.CallCustomResponse;
 import pk.edu.uaf.linkify.Modal.CustomResponse;
+import pk.edu.uaf.linkify.Modal.LinkifyCalls;
 import pk.edu.uaf.linkify.Modal.LinkifyChat;
 import pk.edu.uaf.linkify.Modal.LinkifyMessage;
 import pk.edu.uaf.linkify.Modal.LinkifyUser;
@@ -58,4 +60,10 @@ public interface MyDao {
 
     @Query("Update chat set lastMsg = :msg ,lastModified=:date where chatId=:chatId ")
     void updateChat(long chatId, String msg, Date date);
+
+    @Insert
+    void insertCall(LinkifyCalls calls);
+    @Query("SELECT calls.*,user.*  FROM calls INNER JOIN user ON calls.userId=user.mId")
+    LiveData<List<CallCustomResponse>> getAllCalls();
+
 }
